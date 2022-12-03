@@ -1,6 +1,9 @@
 # Linguist
 *.html linguist-detectable=false
 
+# Neural Networks
+*.onnx filter=lfs diff=lfs merge=lfs -text
+
 # Unity
 *.cginc   text
 *.cs      diff=csharp text
