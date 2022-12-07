@@ -6,6 +6,7 @@ using System;
 
 public class TerrainGenerator : MonoBehaviour
 {
+    [SerializeField] private float heightMultiplier = 10.0f;
     [SerializeField] private GameObject terrainUnit;
 
     [SerializeField] private NNModel modelAsset;
@@ -52,7 +53,7 @@ public class TerrainGenerator : MonoBehaviour
         {
             int x = (int)(i % modelOutputWidth);
             int y = (int)Math.Floor((double)(i / modelOutputWidth));
-            Vector3 terrainUnitPosition = new Vector3(x, heightmap[i] * 10, y);
+            Vector3 terrainUnitPosition = new Vector3(x, heightmap[i] * heightMultiplier, y);
             GameObject currentTerrainUnit = Instantiate(terrainUnit, terrainUnitPosition, Quaternion.identity);
         }
     }
