@@ -9,6 +9,13 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] private float heightMultiplier = 10.0f;
     [SerializeField] private GameObject terrainUnit;
 
+    [SerializeField] private GameObject highTerrainUnit;
+    [SerializeField] private GameObject middleTerrainUnit;
+    [SerializeField] private GameObject lowTerrainUnit;
+
+    [SerializeField] private float highThreshold;
+    [SerializeField] private float lowThreshold;
+
     [SerializeField] private NNModel modelAsset;
     private Model runtimeModel;
 
@@ -54,7 +61,18 @@ public class TerrainGenerator : MonoBehaviour
             int x = (int)(i % modelOutputWidth);
             int y = (int)Math.Floor((double)(i / modelOutputWidth));
             Vector3 terrainUnitPosition = new Vector3(x, heightmap[i] * heightMultiplier, y);
-            GameObject currentTerrainUnit = Instantiate(terrainUnit, terrainUnitPosition, Quaternion.identity);
+            if(terrainUnitPosition.y > highThreshold)
+            {
+                Instantiate(highTerrainUnit, terrainUnitPosition, Quaternion.identity);
+            }
+            else if(terrainUnitPosition.y < lowThreshold)
+            {
+                Instantiate(lowTerrainUnit, terrainUnitPosition, Quaternion.identity);
+            }
+            else
+            {
+                Instantiate(middleTerrainUnit, terrainUnitPosition, Quaternion.identity);
+            }
         }
     }
 }
