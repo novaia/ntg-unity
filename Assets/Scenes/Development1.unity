@@ -246,9 +246,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0eb2943137731644883e490bf1f3c3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  heightMultiplier: 30
+  heightMultiplier: 40
   terrainUnit: {fileID: 1901249675}
-  modelAsset: {fileID: 5022602860645237092, guid: 638ffcab86801f64885c037a78f036b0, type: 3}
+  modelAsset: {fileID: 5022602860645237092, guid: db2e0d95d3b4ce34d9752ff6cbdad033, type: 3}
 --- !u!4 &732897674
 Transform:
   m_ObjectHideFlags: 0
