@@ -4,14 +4,11 @@ using UnityEngine;
 using Unity.Barracuda;
 using System;
 
-public class TerrainGenerator : MonoBehaviour
+public class TerrainGeneratorForUnityTerrain : MonoBehaviour
 {
-    [SerializeField] private float heightMultiplier = 10.0f;
-    [SerializeField] private GameObject terrainUnit;
+    [SerializeField] private Terrain terrain;
 
-    [SerializeField] private GameObject highTerrainUnit;
-    [SerializeField] private GameObject middleTerrainUnit;
-    [SerializeField] private GameObject lowTerrainUnit;
+    [SerializeField] private float heightMultiplier = 10.0f;
 
     [SerializeField] private float highThreshold;
     [SerializeField] private float lowThreshold;
@@ -29,8 +26,7 @@ public class TerrainGenerator : MonoBehaviour
         // Using ComputePrecompiled worker type for most efficient computation on GPU.
         var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
 
-        // Model takes 1x100 noise vector.
-        Tensor input = new Tensor(1, 100); 
+        Tensor input = new Tensor(1, 100);        
         System.Random random = new System.Random();
         for(int i = 0; i < 100; i++)
         {
@@ -51,29 +47,33 @@ public class TerrainGenerator : MonoBehaviour
         return map;
     }
 
-    private void Start()
+    private void SetTerrainHeights(Single[] heightmap)
     {
-        runtimeModel = ModelLoader.Load(modelAsset);
-        Single[] heightmap = GenerateHeightmap(runtimeModel);
-
+        float[,] newHeightmap = new float[modelOutputWidth, modelOutputHeight];
         for(int i = 0; i < modelOutputArea; i++)
         {
             int x = (int)(i % modelOutputWidth);
             int y = (int)Math.Floor((double)(i / modelOutputWidth));
-            Vector3 terrainUnitPosition = new Vector3(x, heightmap[i] * heightMultiplier, y);
-            GameObject newTerrainUnit;
-            if(terrainUnitPosition.y > highThreshold)
-            {
-                newTerrainUnit = Instantiate(highTerrainUnit, terrainUnitPosition, Quaternion.identity);
-            }
-            else if(terrainUnitPosition.y < lowThreshold)
-            {
-                newTerrainUnit = Instantiate(lowTerrainUnit, terrainUnitPosition, Quaternion.identity);
-            }
-            else
-            {
-                newTerrainUnit = Instantiate(middleTerrainUnit, terrainUnitPosition, Quaternion.identity);
-            }
+            newHeightmap[x, y] = (float)heightmap[i] / 2;
+        }
+
+        terrain.terrainData.SetHeights(0, 0, newHeightmap);
+    }
+
+    private void Start()
+    {
+        terrain.terrainData.heightmapResolution = 256;
+        runtimeModel = ModelLoader.Load(modelAsset);
+        Single[] heightmap = GenerateHeightmap(runtimeModel);
+        SetTerrainHeights(heightmap);
+    }
+
+    private void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            Single[] heightmap = GenerateHeightmap(runtimeModel);
+            SetTerrainHeights(heightmap); 
         }
     }
 }
