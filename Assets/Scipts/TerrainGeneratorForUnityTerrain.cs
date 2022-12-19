@@ -49,7 +49,7 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
         {
             int x = (int)(i % modelOutputWidth);
             int y = (int)Math.Floor((double)(i / modelOutputWidth));
-            newHeightmap[x, y] = (float)heightmap[i] / 2;
+            newHeightmap[x, y] = (float)heightmap[i] * heightMultiplier;
         }
 
         terrain.terrainData.SetHeights(0, 0, newHeightmap);
@@ -59,7 +59,7 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
     {
         terrain.terrainData.heightmapResolution = 256;
         runtimeModel = ModelLoader.Load(modelAsset);
-        Single[] heightmap = GenerateHeightmap(runtimeModel, InputTensorFromArray(latentVectors.LatentVector1));
+        Single[] heightmap = GenerateHeightmap(runtimeModel, InputTensorFromArray(latentVectors.BottomLeftDecline));
         SetTerrainHeights(heightmap);
     }
 
