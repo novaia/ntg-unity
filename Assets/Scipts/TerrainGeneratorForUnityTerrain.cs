@@ -20,18 +20,13 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
     private const int modelOutputHeight = 256;
     private const int modelOutputArea = modelOutputWidth * modelOutputHeight;
 
-    private Single[] GenerateHeightmap(Model model)
+    [SerializeField] private LatentVectors latentVectors;
+
+    private Single[] GenerateHeightmap(Model model, Tensor input)
     {
         // Reference: https://docs.unity3d.com/Packages/com.unity.barracuda@1.0/manual/Worker.html
         // Using ComputePrecompiled worker type for most efficient computation on GPU.
         var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
-
-        Tensor input = new Tensor(1, 100);        
-        System.Random random = new System.Random();
-        for(int i = 0; i < 100; i++)
-        {
-            input[0, i] = random.Next(0, 100) / 100f;
-        }
 
         // Execute model.
         worker.Execute(input);
@@ -64,7 +59,7 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
     {
         terrain.terrainData.heightmapResolution = 256;
         runtimeModel = ModelLoader.Load(modelAsset);
-        Single[] heightmap = GenerateHeightmap(runtimeModel);
+        Single[] heightmap = GenerateHeightmap(runtimeModel, InputTensorFromArray(latentVectors.LatentVector1));
         SetTerrainHeights(heightmap);
     }
 
@@ -72,8 +67,29 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            Single[] heightmap = GenerateHeightmap(runtimeModel);
+            Single[] heightmap = GenerateHeightmap(runtimeModel, RandomInputTensor());
             SetTerrainHeights(heightmap); 
         }
+    }
+
+    private Tensor RandomInputTensor()
+    {
+        Tensor input = new Tensor(1, 100);        
+        System.Random random = new System.Random();
+        for(int i = 0; i < 100; i++)
+        {
+            input[0, i] = random.Next(0, 100) / 100f;
+        }
+        return input;  
+    }
+
+    private Tensor InputTensorFromArray(float[] inputArray)
+    {
+        Tensor input = new Tensor(1, 100);
+        for(int i = 0; i < inputArray.Length; i++)
+        {
+            input[i] = inputArray[i];
+        }
+        return input;
     }
 }
