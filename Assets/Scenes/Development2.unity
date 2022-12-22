@@ -339,6 +339,21 @@ MonoBehaviour:
   lowThreshold: 0
   modelAsset: {fileID: 5022602860645237092, guid: c05bda58b7f72d74dac65724ea8b45fa, type: 3}
   latentVectors: {fileID: 1665063064}
+  BigMountainTopLeft: 1
+  CentralValley: 0
+  Lowlands: 0
+  Highlands: 0
+  DiagonalRidge: 0
+  Highlands2: 0
+  CentralValley2: 0
+  BottomRightDecline: 0
+  BottomRightDecline2: 0
+  DivergingRidges: 0
+  Highlands3: 0
+  ValleyPass: 0
+  CentralValley3: 0
+  BottomLeftDecline: 0
+  random: 0
 --- !u!154 &1665063061
 TerrainCollider:
   m_ObjectHideFlags: 0

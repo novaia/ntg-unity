@@ -22,6 +22,23 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
 
     [SerializeField] private LatentVectors latentVectors;
 
+    [Header("Latent Vectors to Add")]
+    [SerializeField] private bool BigMountainTopLeft;
+    [SerializeField] private bool CentralValley;
+    [SerializeField] private bool Lowlands;
+    [SerializeField] private bool Highlands;
+    [SerializeField] private bool DiagonalRidge;
+    [SerializeField] private bool Highlands2;
+    [SerializeField] private bool CentralValley2;
+    [SerializeField] private bool BottomRightDecline;
+    [SerializeField] private bool BottomRightDecline2;
+    [SerializeField] private bool DivergingRidges;
+    [SerializeField] private bool Highlands3;
+    [SerializeField] private bool ValleyPass;
+    [SerializeField] private bool CentralValley3;
+    [SerializeField] private bool BottomLeftDecline;
+    [SerializeField] private bool random;
+
     private Single[] GenerateHeightmap(Model model, Tensor input)
     {
         // Reference: https://docs.unity3d.com/Packages/com.unity.barracuda@1.0/manual/Worker.html
@@ -59,7 +76,9 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
     {
         terrain.terrainData.heightmapResolution = 256;
         runtimeModel = ModelLoader.Load(modelAsset);
-        Single[] heightmap = GenerateHeightmap(runtimeModel, InputTensorFromArray(latentVectors.BottomLeftDecline));
+        //Single[] heightmap = GenerateHeightmap(runtimeModel, AddTensors(InputTensorFromArray(latentVectors.CentralValley),
+        //                                                                InputTensorFromArray(latentVectors.Highlands2)));
+        Single[] heightmap = GenerateHeightmap(runtimeModel, CustomInputTensor());
         SetTerrainHeights(heightmap);
     }
 
@@ -67,7 +86,7 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            Single[] heightmap = GenerateHeightmap(runtimeModel, RandomInputTensor());
+            Single[] heightmap = GenerateHeightmap(runtimeModel, CustomInputTensor());
             SetTerrainHeights(heightmap); 
         }
     }
@@ -90,6 +109,84 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
         {
             input[i] = inputArray[i];
         }
+        return input;
+    }
+
+    private Tensor AddTensors(Tensor a, Tensor b)
+    {
+        Tensor c = new Tensor(1, 100);
+        for(int i = 0; i < 100; i++)
+        {
+            c[i] = a[i] + b[i];
+        }
+        return c;
+    }
+
+    private Tensor CustomInputTensor()
+    {
+        Tensor input = new Tensor(1, 100);
+
+        if(BigMountainTopLeft)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.BigMountainTopLeft));
+        }
+        if(CentralValley)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.CentralValley));
+        }
+        if(Lowlands)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.Lowlands));
+        }
+        if(Highlands)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.Highlands));
+        }
+        if(DiagonalRidge)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.DiagonalRidge));
+        }
+        if(Highlands2)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.Highlands2));
+        }
+        if(CentralValley2)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.CentralValley2));
+        }
+        if(BottomRightDecline)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.BottomRightDecline));
+        }
+        if(BottomRightDecline2)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.BottomRightDecline2));
+        }
+        if(DivergingRidges)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.DivergingRidges));
+        }        
+        if(DivergingRidges)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.DivergingRidges));
+        }
+        if(ValleyPass)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.ValleyPass));
+        }
+        if(CentralValley3)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.CentralValley3));
+        }
+        if(BottomLeftDecline)
+        {
+            input = AddTensors(input, InputTensorFromArray(latentVectors.BottomLeftDecline));
+        }
+        if(random)
+        {
+            input = AddTensors(input, RandomInputTensor());
+        }
+
         return input;
     }
 }
