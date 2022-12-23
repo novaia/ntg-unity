@@ -97,7 +97,7 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
         System.Random random = new System.Random();
         for(int i = 0; i < 100; i++)
         {
-            input[0, i] = random.Next(0, 100) / 100f;
+            input[0, i] = random.Next(0, 100) / 100f * 2;
         }
         return input;  
     }
