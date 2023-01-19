@@ -37,7 +37,8 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
     [SerializeField] private bool ValleyPass;
     [SerializeField] private bool CentralValley3;
     [SerializeField] private bool BottomLeftDecline;
-    [SerializeField] private bool random;
+    [SerializeField] private bool randomNormal;
+    [SerializeField] private bool randomUniform;
 
     private Single[] GenerateHeightmap(Model model, Tensor input)
     {
@@ -100,6 +101,25 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
             input[0, i] = random.Next(0, 100) / 100f * 2;
         }
         return input;  
+    }
+
+    private Tensor RandomNormalInputTensor()
+    {
+        Tensor input = new Tensor(1, 100);
+        System.Random random = new System.Random();
+        for(int i = 0; i < 100; i++)
+        {
+            // Box-Mueller transform.
+            // Reference: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+            double mean = 0.0f;
+            double stdDev = 1.0f;
+            double u1 = 1.0 - random.Next(0, 100) / 100f;
+            double u2 = 1.0 - random.Next(0, 100) / 100f;
+            double randomStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+            double randomNormal = mean + stdDev * randomStdNormal;
+            input[i] = (float)randomNormal;
+        }
+        return input;
     }
 
     private Tensor InputTensorFromArray(float[] inputArray)
@@ -182,7 +202,11 @@ public class TerrainGeneratorForUnityTerrain : MonoBehaviour
         {
             input = AddTensors(input, InputTensorFromArray(latentVectors.BottomLeftDecline));
         }
-        if(random)
+        if(randomNormal)
+        {
+            input = AddTensors(input, RandomNormalInputTensor());
+        }
+        if(randomUniform)
         {
             input = AddTensors(input, RandomInputTensor());
         }
