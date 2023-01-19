@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 122931783027493701}
   - component: {fileID: 742357216253249462}
   m_Layer: 0
-  m_Name: TerrainGenerator
+  m_Name: GanTerrainGenerator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
