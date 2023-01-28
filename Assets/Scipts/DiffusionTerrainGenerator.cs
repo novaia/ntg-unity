@@ -24,7 +24,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         {
             Single[] heightmap = GenerateHeightmap(runtimeModel, 
                                                    new WorkerExecuter(ReverseDiffusion),
-                                                   new object[] {1, 1});
+                                                   new object[] {20, 1});
             SetTerrainHeights(heightmap);
         }
     }
@@ -34,50 +34,39 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         int diffusionSteps = (int)args[0];
         int batchSize = (int)args[1];
 
-        DebuggingHelper helper = new DebuggingHelper();
-        Tensor initialNoise = helper.GetDebugTensor();
-
-        /*Tensor initialNoise = tensorMathHelper.RandomNormalTensor(batchSize, 
+        Tensor initialNoise = tensorMathHelper.RandomNormalTensor(batchSize, 
                                                                   modelOutputWidth, 
                                                                   modelOutputHeight, 
-                                                                  channels);*/
+                                                                  channels);
         float stepSize = 1.0f / diffusionSteps;
         Tensor nextNoisyImages = initialNoise;
-        DisplayFirstTen(nextNoisyImages, "nextNoisyImages");
         Tensor predictedImages = new Tensor(batchSize, modelOutputWidth, 
                                             modelOutputHeight, channels);
 
         for(int step = 0; step < diffusionSteps; step++)
         {
             Tensor noisyImages = nextNoisyImages;
-            DisplayFirstTen(noisyImages, "noisyImages");
 
             float[] diffusionTimes = {1.0f - stepSize * step};
             Tensor[] rates = DiffusionSchedule(diffusionTimes);
             Tensor noiseRates = rates[0];
-            Debug.Log("noiseRates: " + noiseRates[0]);
             Tensor signalRates = rates[1];
-            Debug.Log("signalRates: " + signalRates[0]);
             Tensor noiseRatesSquared = tensorMathHelper.RaiseTensorToPower(noiseRates, 2);
             
             worker.Execute(PackageInputs(noisyImages, noiseRatesSquared));
             Tensor predictedNoises = worker.PeekOutput();
-            DisplayFirstTen(predictedNoises, "predictedNoises");
 
             // Calculate predicted images.
             // predictedNoises * noiseRate
             Tensor scaledPredictedNoises = tensorMathHelper.ScaleTensorBatches(predictedNoises, 
                                                                                noiseRates);
-            DisplayFirstTen(scaledPredictedNoises, "noiseRates * predictedNoises");
             // noisyImages - predictedNoises * noiseRate
             Tensor difference = tensorMathHelper.SubtractTensor(noisyImages, 
                                                                 scaledPredictedNoises);
-            DisplayFirstTen(difference, "noisyImages - noiseRates * predictedNoises");
             // (noisyImages - predictedNoises * noiseRate) / signalRate
             predictedImages = tensorMathHelper.ScaleTensorBatches(difference, 
                                                                   signalRates,
                                                                   true);
-            DisplayFirstTen(predictedImages, "predictedImages");
 
             scaledPredictedNoises.Dispose();
             difference.Dispose();
@@ -117,16 +106,6 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         initialNoise.Dispose();
         nextNoisyImages.Dispose();
         return predictedImages;
-    }
-
-    private void DisplayFirstTen(Tensor tensor, String name)
-    {
-        Debug.Log(name + ":");
-        for(int i = 0; i < 10; i++)
-        {
-            Debug.Log(tensor[0, 0, i, 0]);
-        }
-        Debug.Log("");
     }
 
     private void DisplayFirstTenOld(Tensor tensor, String name)
