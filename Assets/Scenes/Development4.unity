@@ -251,11 +251,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc24f765adc8ac043874ce861fed5a2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  modelAsset: {fileID: 5022602860645237092, guid: d6c2323ae9f8b3b4dbfbee745370dc15, type: 3}
+  modelAsset: {fileID: 5022602860645237092, guid: d17c0e44daadad84aa3353f9f313f984, type: 3}
   modelOutputWidth: 256
   modelOutputHeight: 256
   terrain: {fileID: 815706691}
-  heightMultiplier: 10
+  heightMultiplier: 0.00001
 --- !u!1 &815706689
 GameObject:
   m_ObjectHideFlags: 0
