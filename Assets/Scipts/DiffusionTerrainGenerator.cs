@@ -9,12 +9,14 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
     private const float maxSignalRate = 0.95f;
     private const float minSignalRate = 0.02f;
 
+    [SerializeField] protected float existingSignalRate;
+    [SerializeField] protected float existingNoiseRate;
+    [SerializeField] protected int diffusionIterations = 20;
+
     protected override void Start()
     {
         base.Start();
-        Single[] heightmap = GenerateHeightmap(runtimeModel, 
-                                               new WorkerExecuter(ReverseDiffusion),
-                                               new object[] {20, 1});
+        Single[] heightmap = GenerateHeightmapFromScratch();
         SetTerrainHeights(heightmap);
     }
 
@@ -22,22 +24,109 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
     {
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            Single[] heightmap = GenerateHeightmap(runtimeModel, 
-                                                   new WorkerExecuter(ReverseDiffusion),
-                                                   new object[] {20, 1});
+            Single[] heightmap = GenerateHeightmapFromScratch();
+            SetTerrainHeights(heightmap);
+        }
+        if(Input.GetKeyDown(KeyCode.K))
+        {
+            Single[] heightmap = GenerateHeightmapFromExisting();
             SetTerrainHeights(heightmap);
         }
     }
+
+    public float[] GenerateHeightmapFromScratch()
+    {
+        Tensor initialNoise = tensorMathHelper.RandomNormalTensor(0, 
+                                                                  modelOutputWidth, 
+                                                                  modelOutputHeight, 
+                                                                  channels);
+        float[] heightmap = GenerateHeightmap(runtimeModel, 
+                                              new WorkerExecuter(ReverseDiffusion),
+                                              new object[] {diffusionIterations, 1, initialNoise});
+        return heightmap;
+    }
+
+    public float[] GenerateHeightmapFromExisting()
+    {
+        if(terrain.terrainData.heightmapResolution != modelOutputWidth
+           || terrain.terrainData.heightmapResolution != modelOutputHeight)
+        {
+            //Debug.LogError("Terrain heightmap size must match model output size.");
+            //return null;
+        }
+
+        float[,] existingHeightmap = terrain.terrainData.GetHeights(0, 0, 
+                                                                    modelOutputWidth, 
+                                                                    modelOutputHeight);
+        float maxHeight = existingHeightmap[0, 0];
+        float minHeight = existingHeightmap[0, 0];
+
+        Tensor normalizedExistingHeightmap = new Tensor(0, modelOutputHeight, 
+                                                        modelOutputWidth, channels);
+        for(int x = 0; x < modelOutputWidth; x++)
+        {
+            for(int y = 0; y < modelOutputHeight; y++)
+            {
+                if(existingHeightmap[x, y] > maxHeight)
+                {
+                    maxHeight = existingHeightmap[x, y];
+                }
+                else if (existingHeightmap[x, y] < minHeight)
+                {
+                    minHeight = existingHeightmap[x, y];
+                }
+            }
+        }
+
+        float minMaxDifference = maxHeight - minHeight;
+        for(int x = 0; x < modelOutputWidth; x++)
+        {
+            for(int y = 0; y < modelOutputHeight; y++)
+            {
+                float normalizedValue = (existingHeightmap[x, y] - minHeight) / minMaxDifference;
+                normalizedExistingHeightmap[0, y, x, 0] = normalizedValue - 0.5f;
+                Debug.Log(normalizedValue);
+            }
+        }
+        
+        Tensor initialNoise = tensorMathHelper.RandomNormalTensor(0, 
+                                                                  modelOutputWidth, 
+                                                                  modelOutputHeight, 
+                                                                  channels);
+        Tensor scaledExistingHeightmap = tensorMathHelper.ScaleTensor(normalizedExistingHeightmap, 
+                                                                      existingSignalRate);
+        Tensor scaledInitialNoise = tensorMathHelper.ScaleTensor(initialNoise, existingNoiseRate);
+        Tensor inputTensor = tensorMathHelper.AddTensor(scaledExistingHeightmap, scaledInitialNoise);
+
+        float[] heightmap = GenerateHeightmap(runtimeModel, 
+                                              new WorkerExecuter(ReverseDiffusion),
+                                              new object[] {diffusionIterations, 1, inputTensor});
+        
+        // Make minimum height 0.
+        minHeight = heightmap[0];
+        int minIndex = 0;
+        for(int i = 0; i < modelOutputArea; i++)
+        {
+            if(heightmap[i] < minHeight)
+            {
+                minHeight = heightmap[i];
+                minIndex = i;
+            }
+        }
+        for(int i = 0; i < modelOutputArea; i++)
+        {
+            heightmap[i] -= minHeight;
+        }
+
+        return heightmap;
+    } 
 
     protected Tensor ReverseDiffusion(IWorker worker, params object[] args)
     {
         int diffusionSteps = (int)args[0];
         int batchSize = (int)args[1];
+        Tensor initialNoise = (Tensor)args[2];
 
-        Tensor initialNoise = tensorMathHelper.RandomNormalTensor(batchSize, 
-                                                                  modelOutputWidth, 
-                                                                  modelOutputHeight, 
-                                                                  channels);
         float stepSize = 1.0f / diffusionSteps;
         Tensor nextNoisyImages = initialNoise;
         Tensor predictedImages = new Tensor(batchSize, modelOutputWidth, 
@@ -106,16 +195,6 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         initialNoise.Dispose();
         nextNoisyImages.Dispose();
         return predictedImages;
-    }
-
-    private void DisplayFirstTenOld(Tensor tensor, String name)
-    {
-        Debug.Log(name + ":");
-        for(int i = 0; i < 10; i++)
-        {
-            Debug.Log(tensor[i]);
-        }
-        Debug.Log("");
     }
 
     private Tensor[] DiffusionSchedule(float[] diffusionTimes)
