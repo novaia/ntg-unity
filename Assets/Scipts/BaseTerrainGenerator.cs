@@ -16,18 +16,23 @@ public class BaseTerrainGenerator : MonoBehaviour
     protected int modelOutputArea;
     protected int channels = 1;
 
-    [SerializeField] Terrain terrain;
+    [SerializeField] protected Terrain terrain;
     [SerializeField] protected float heightMultiplier = 10.0f;
 
     protected delegate Tensor WorkerExecuter(IWorker worker, params object[] args);
 
-    protected virtual void Start()
+    public void Setup()
     {
         modelOutputArea = modelOutputWidth * modelOutputHeight;
         runtimeModel = ModelLoader.Load(modelAsset);
     }
 
-    protected void SetTerrainHeights(Single[] heightmap)
+    protected virtual void Start()
+    {
+        Setup();
+    }
+
+    public void SetTerrainHeights(Single[] heightmap)
     {
         float[,] newHeightmap = new float[modelOutputWidth, modelOutputHeight];
         for(int i = 0; i < modelOutputArea; i++)

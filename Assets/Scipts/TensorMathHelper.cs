@@ -68,6 +68,16 @@ public class TensorMathHelper
         return newTensor;
     }
 
+    public Tensor ScaleTensor(Tensor tensor, float scalar)
+    {
+        Tensor newTensor = new Tensor(tensor.batch, tensor.width, tensor.height, tensor.channels);
+        for(int i = 0; i < tensor.length; i++)
+        {
+            newTensor[i] = tensor[i] * scalar;
+        }
+        return newTensor;
+    }
+
     public Tensor SubtractTensor(Tensor leftTensor, Tensor rightTensor)
     {
         if(leftTensor.length != rightTensor.length)
