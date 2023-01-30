@@ -9,29 +9,59 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
     private const float maxSignalRate = 0.95f;
     private const float minSignalRate = 0.02f;
 
-    [SerializeField] protected float existingSignalRate;
-    [SerializeField] protected float existingNoiseRate;
-    [SerializeField] protected int diffusionIterations = 20;
+    [SerializeField] protected float existingHeightmapWeight;
+    [SerializeField] protected float noiseWeight;
+    [SerializeField] protected int diffusionIterationsFromScratch = 20;
+    [SerializeField] protected int diffusionIterationsFromExisting = 20;
+    public Tensor randomNormalTensorForDisplay;
+    protected float[,] flatHeights;
 
-    protected override void Start()
+    public override void Setup()
     {
-        base.Start();
-        Single[] heightmap = GenerateHeightmapFromScratch();
-        SetTerrainHeights(heightmap);
+        base.Setup();
+        randomNormalTensorForDisplay = tensorMathHelper.RandomNormalTensor(0, 
+                                                                           modelOutputWidth, 
+                                                                           modelOutputHeight, 
+                                                                           channels);
+        flatHeights = terrain.terrainData.GetHeights(0, 0, 
+                                                     modelOutputWidth, 
+                                                     modelOutputHeight);
+        for(int x = 0; x < modelOutputWidth; x++)
+        {
+            for(int y = 0; y < modelOutputHeight; y++)
+            {
+                flatHeights[x, y] = 0f;
+            }
+        }
     }
 
-    private void Update()
+    public void ClearTerrain()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        terrain.terrainData.SetHeights(0, 0, flatHeights);
+    }
+
+    public Texture2D GetTerrainHeightmapAsTexture()
+    {
+        float[,] heightmap = terrain.terrainData.GetHeights(0, 0, 
+                                                            modelOutputWidth, 
+                                                            modelOutputHeight);
+        Texture2D heightmapTexture = new Texture2D(modelOutputWidth, 
+                                                   modelOutputHeight);
+        
+        for(int x = 0; x < modelOutputWidth; x++)
         {
-            Single[] heightmap = GenerateHeightmapFromScratch();
-            SetTerrainHeights(heightmap);
+            for(int y = 0; y < modelOutputHeight; y++)
+            {
+                float weightedHeightmapValue = heightmap[x, y] * existingHeightmapWeight;
+                float weightedNoiseValue = randomNormalTensorForDisplay[x + y * modelOutputWidth] * noiseWeight;
+                float colorValue = (weightedHeightmapValue + weightedNoiseValue) * 2;
+                Color color = new Color(colorValue, colorValue, colorValue);
+                heightmapTexture.SetPixel(x, y, color);
+            }
         }
-        if(Input.GetKeyDown(KeyCode.K))
-        {
-            Single[] heightmap = GenerateHeightmapFromExisting();
-            SetTerrainHeights(heightmap);
-        }
+        heightmapTexture.Apply();
+
+        return heightmapTexture;
     }
 
     public float[] GenerateHeightmapFromScratch()
@@ -40,9 +70,11 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                                                                   modelOutputWidth, 
                                                                   modelOutputHeight, 
                                                                   channels);
+
+        object [] args = new object[] {diffusionIterationsFromScratch, 1, initialNoise};
         float[] heightmap = GenerateHeightmap(runtimeModel, 
                                               new WorkerExecuter(ReverseDiffusion),
-                                              new object[] {diffusionIterations, 1, initialNoise});
+                                              args);
         return heightmap;
     }
 
@@ -94,13 +126,14 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                                                                   modelOutputHeight, 
                                                                   channels);
         Tensor scaledExistingHeightmap = tensorMathHelper.ScaleTensor(normalizedExistingHeightmap, 
-                                                                      existingSignalRate);
-        Tensor scaledInitialNoise = tensorMathHelper.ScaleTensor(initialNoise, existingNoiseRate);
+                                                                      existingHeightmapWeight);
+        Tensor scaledInitialNoise = tensorMathHelper.ScaleTensor(initialNoise, noiseWeight);
         Tensor inputTensor = tensorMathHelper.AddTensor(scaledExistingHeightmap, scaledInitialNoise);
 
+        object[] args = new object[] {diffusionIterationsFromExisting, 1, inputTensor};
         float[] heightmap = GenerateHeightmap(runtimeModel, 
                                               new WorkerExecuter(ReverseDiffusion),
-                                              new object[] {diffusionIterations, 1, inputTensor});
+                                              args);
         
         // Make minimum height 0.
         minHeight = heightmap[0];
