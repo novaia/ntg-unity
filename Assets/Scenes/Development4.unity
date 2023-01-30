@@ -256,9 +256,10 @@ MonoBehaviour:
   modelOutputHeight: 256
   terrain: {fileID: 815706691}
   heightMultiplier: 0.3
-  existingSignalRate: 0.2
-  existingNoiseRate: 0.9
-  diffusionIterations: 20
+  existingHeightmapWeight: 0
+  noiseWeight: 0
+  diffusionIterationsFromScratch: 20
+  diffusionIterationsFromExisting: 20
 --- !u!1 &815706689
 GameObject:
   m_ObjectHideFlags: 0
@@ -355,9 +356,10 @@ MonoBehaviour:
   modelOutputHeight: 256
   terrain: {fileID: 815706691}
   heightMultiplier: 0.3
-  existingSignalRate: 0
-  existingNoiseRate: 0
-  diffusionIterations: 20
+  existingHeightmapWeight: 1
+  noiseWeight: 0
+  diffusionIterationsFromScratch: 20
+  diffusionIterationsFromExisting: 20
 --- !u!1 &1208450411
 GameObject:
   m_ObjectHideFlags: 0
