@@ -10,7 +10,6 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
     private const float minSignalRate = 0.02f;
 
     [SerializeField] protected float existingHeightmapWeight;
-    [SerializeField] protected float noiseWeight;
     [SerializeField] protected int diffusionIterationsFromScratch = 20;
     [SerializeField] protected int diffusionIterationsFromExisting = 20;
     public Tensor randomNormalTensorForDisplay;
@@ -48,6 +47,8 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         Texture2D heightmapTexture = new Texture2D(modelOutputWidth, 
                                                    modelOutputHeight);
         
+        float noiseWeight = 1 - existingHeightmapWeight;
+
         for(int x = 0; x < modelOutputWidth; x++)
         {
             for(int y = 0; y < modelOutputHeight; y++)
@@ -110,14 +111,25 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
             }
         }
 
-        float minMaxDifference = maxHeight - minHeight;
+        /*float minMaxDifference = maxHeight - minHeight;
         for(int x = 0; x < modelOutputWidth; x++)
         {
             for(int y = 0; y < modelOutputHeight; y++)
             {
                 float normalizedValue = (existingHeightmap[x, y] - minHeight) / minMaxDifference;
                 normalizedExistingHeightmap[0, y, x, 0] = normalizedValue - 0.5f;
-                Debug.Log(normalizedValue);
+            }
+        }*/
+        if(maxHeight != 0)
+        {
+            for(int x = 0; x < modelOutputWidth; x++)
+            {
+                for(int y = 0; y < modelOutputHeight; y++)
+                {
+                    float constrainedValue = existingHeightmap[x, y] / maxHeight;
+                    normalizedExistingHeightmap[0, y, x, 0] = constrainedValue;
+                    Debug.Log(constrainedValue);
+                }
             }
         }
         
@@ -125,9 +137,10 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                                                                   modelOutputWidth, 
                                                                   modelOutputHeight, 
                                                                   channels);
+        Tensor scaledInitialNoise = tensorMathHelper.ScaleTensor(initialNoise, 
+                                                                 1 - existingHeightmapWeight);
         Tensor scaledExistingHeightmap = tensorMathHelper.ScaleTensor(normalizedExistingHeightmap, 
                                                                       existingHeightmapWeight);
-        Tensor scaledInitialNoise = tensorMathHelper.ScaleTensor(initialNoise, noiseWeight);
         Tensor inputTensor = tensorMathHelper.AddTensor(scaledExistingHeightmap, scaledInitialNoise);
 
         object[] args = new object[] {diffusionIterationsFromExisting, 1, inputTensor};

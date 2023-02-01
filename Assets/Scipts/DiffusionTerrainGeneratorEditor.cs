@@ -11,8 +11,8 @@ public class DiffusionTerrainGeneratorEditor : Editor
     SerializedProperty diffusionIterationsFromScratch;
     SerializedProperty diffusionIterationsFromExisting;
     SerializedProperty existingHeightmapWeight;
-    SerializedProperty noiseWeight;
     SerializedProperty heightmapTexture;
+    SerializedProperty heightMultiplier;
 
     public void OnEnable()
     {
@@ -21,20 +21,20 @@ public class DiffusionTerrainGeneratorEditor : Editor
         diffusionIterationsFromScratch = serializedObject.FindProperty("diffusionIterationsFromScratch");
         diffusionIterationsFromExisting = serializedObject.FindProperty("diffusionIterationsFromExisting");
         existingHeightmapWeight = serializedObject.FindProperty("existingHeightmapWeight");
-        noiseWeight = serializedObject.FindProperty("noiseWeight");
+        heightMultiplier = serializedObject.FindProperty("heightMultiplier");
     }
 
     public override void OnInspectorGUI()
     {
         //DrawDefaultInspector();
+        serializedObject.Update();
 
         if(GUILayout.Button("Clear Terrain"))
         {
             generator.ClearTerrain();
         }
 
-
-        serializedObject.Update();
+        EditorGUILayout.PropertyField(heightMultiplier);
         EditorGUILayout.PropertyField(diffusionIterationsFromScratch);
 
         if(GUILayout.Button("Generate Terrain From Scratch"))
@@ -44,12 +44,8 @@ public class DiffusionTerrainGeneratorEditor : Editor
         }
 
         EditorGUILayout.PropertyField(diffusionIterationsFromExisting);
-        //EditorGUILayout.PropertyField(existingHeightmapWeight);
-        //EditorGUILayout.PropertyField(noiseWeight);
         EditorGUILayout.Slider(existingHeightmapWeight, 1, 0);
-        EditorGUILayout.Slider(noiseWeight, 1, 0);
 
-        //GUILayout.Box(generator.terrain.terrainData.heightmapTexture);
         GUILayout.Box(generator.GetTerrainHeightmapAsTexture());
 
         if(GUILayout.Button("Generate Terrain From Existing"))
