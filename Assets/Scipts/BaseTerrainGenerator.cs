@@ -29,12 +29,21 @@ public class BaseTerrainGenerator : MonoBehaviour
 
     public void SetTerrainHeights(Single[] heightmap)
     {
+        float maxValue = heightmap[0];
+        for(int i = 0; i < heightmap.Length; i++)
+        {
+            if(heightmap[i] > maxValue)
+            {
+                maxValue = heightmap[i];
+            }
+        }
+
         float[,] newHeightmap = new float[modelOutputWidth, modelOutputHeight];
         for(int i = 0; i < modelOutputArea; i++)
         {
             int x = (int)(i % modelOutputWidth);
             int y = (int)Math.Floor((double)(i / modelOutputWidth));
-            newHeightmap[x, y] = (float)heightmap[i] * heightMultiplier;
+            newHeightmap[x, y] = (float)heightmap[i] / maxValue * heightMultiplier;
         }
 
         terrain.terrainData.SetHeights(0, 0, newHeightmap);

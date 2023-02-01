@@ -33,7 +33,7 @@ public class TensorMathHelper
             return null;
         }
 
-        Tensor newTensor = new Tensor(tensor1.batch, tensor1.width, tensor1.height, tensor1.channels);
+        Tensor newTensor = new Tensor(tensor1.batch, tensor1.height, tensor1.width, tensor1.channels);
         for(int i = 0; i < tensor1.length; i++)
         {
             newTensor[i] = tensor1[i] + tensor2[i];
