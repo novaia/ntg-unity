@@ -13,6 +13,7 @@ public class DiffusionTerrainGeneratorEditor : Editor
     SerializedProperty existingHeightmapWeight;
     SerializedProperty heightmapTexture;
     SerializedProperty heightMultiplier;
+    SerializedProperty startingDiffusionIterationFromExisting;
 
     public void OnEnable()
     {
@@ -22,6 +23,7 @@ public class DiffusionTerrainGeneratorEditor : Editor
         diffusionIterationsFromExisting = serializedObject.FindProperty("diffusionIterationsFromExisting");
         existingHeightmapWeight = serializedObject.FindProperty("existingHeightmapWeight");
         heightMultiplier = serializedObject.FindProperty("heightMultiplier");
+        startingDiffusionIterationFromExisting = serializedObject.FindProperty("startingDiffusionIterationFromExisting");
     }
 
     public override void OnInspectorGUI()
@@ -44,6 +46,7 @@ public class DiffusionTerrainGeneratorEditor : Editor
         }
 
         EditorGUILayout.PropertyField(diffusionIterationsFromExisting);
+        EditorGUILayout.PropertyField(startingDiffusionIterationFromExisting);
         EditorGUILayout.Slider(existingHeightmapWeight, 1, 0);
 
         GUILayout.Box(generator.GetTerrainHeightmapAsTexture());
