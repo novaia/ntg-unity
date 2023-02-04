@@ -12,6 +12,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
     [SerializeField] protected float existingHeightmapWeight;
     [SerializeField] protected int diffusionIterationsFromScratch = 20;
     [SerializeField] protected int diffusionIterationsFromExisting = 20;
+    [SerializeField] protected int startingDiffusionIterationFromExisting = 0;
     public Tensor randomNormalTensorForDisplay;
     protected float[,] flatHeights;
 
@@ -72,7 +73,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                                                                   modelOutputHeight, 
                                                                   channels);
 
-        object [] args = new object[] {diffusionIterationsFromScratch, 1, initialNoise};
+        object [] args = new object[] {diffusionIterationsFromScratch, 1, initialNoise, 0};
         float[] heightmap = GenerateHeightmap(runtimeModel, 
                                               new WorkerExecuter(ReverseDiffusion),
                                               args);
@@ -128,7 +129,6 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                 {
                     float constrainedValue = existingHeightmap[x, y] / maxHeight;
                     normalizedExistingHeightmap[0, y, x, 0] = constrainedValue;
-                    Debug.Log(constrainedValue);
                 }
             }
         }
@@ -143,7 +143,8 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                                                                       existingHeightmapWeight);
         Tensor inputTensor = tensorMathHelper.AddTensor(scaledExistingHeightmap, scaledInitialNoise);
 
-        object[] args = new object[] {diffusionIterationsFromExisting, 1, inputTensor};
+        object[] args = new object[] {diffusionIterationsFromExisting, 1, inputTensor, 
+                                      startingDiffusionIterationFromExisting};
         float[] heightmap = GenerateHeightmap(runtimeModel, 
                                               new WorkerExecuter(ReverseDiffusion),
                                               args);
@@ -169,16 +170,18 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
 
     protected Tensor ReverseDiffusion(IWorker worker, params object[] args)
     {
+        // Extract arguments.
         int diffusionSteps = (int)args[0];
         int batchSize = (int)args[1];
         Tensor initialNoise = (Tensor)args[2];
+        int startingStep = (int)args[3];
 
         float stepSize = 1.0f / diffusionSteps;
         Tensor nextNoisyImages = initialNoise;
         Tensor predictedImages = new Tensor(batchSize, modelOutputWidth, 
                                             modelOutputHeight, channels);
 
-        for(int step = 0; step < diffusionSteps; step++)
+        for(int step = startingStep; step < diffusionSteps; step++)
         {
             Tensor noisyImages = nextNoisyImages;
 
@@ -227,6 +230,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
             nextNoisyImages = tensorMathHelper.AddTensor(scaledPredictedImages, 
                                                          scaledPredictedNoises2);
             
+            // Dispose of tensors.
             scaledPredictedImages.Dispose();
             scaledPredictedNoises2.Dispose();
             nextNoiseRates.Dispose();
@@ -238,8 +242,10 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
             noisyImages.Dispose();
         }
 
+        // Dispose of tensors.
         initialNoise.Dispose();
         nextNoisyImages.Dispose();
+
         return predictedImages;
     }
 

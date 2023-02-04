@@ -303,9 +303,10 @@ MonoBehaviour:
   modelOutputHeight: 256
   terrain: {fileID: 815706691}
   heightMultiplier: 0.3
-  existingHeightmapWeight: 0.122
+  existingHeightmapWeight: 1
   diffusionIterationsFromScratch: 20
-  diffusionIterationsFromExisting: 2
+  diffusionIterationsFromExisting: 20
+  startingDiffusionIterationFromExisting: 15
 --- !u!1 &1208450411
 GameObject:
   m_ObjectHideFlags: 0
