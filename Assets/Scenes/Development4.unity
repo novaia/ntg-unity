@@ -302,8 +302,8 @@ MonoBehaviour:
   modelOutputWidth: 256
   modelOutputHeight: 256
   terrain: {fileID: 815706691}
-  heightMultiplier: 0.3
-  existingHeightmapWeight: 1
+  heightMultiplier: 0.2
+  existingHeightmapWeight: 0.434
   diffusionIterationsFromScratch: 20
   diffusionIterationsFromExisting: 20
   startingDiffusionIterationFromExisting: 15
@@ -343,7 +343,7 @@ MonoBehaviour:
   modelOutputHeight: 256
   terrain: {fileID: 1127208671}
   heightMultiplier: 0.3
-  existingHeightmapWeight: 0
+  existingHeightmapWeight: 1
   diffusionIterationsFromScratch: 20
   diffusionIterationsFromExisting: 20
   startingDiffusionIterationFromExisting: 0

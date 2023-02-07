@@ -43,18 +43,23 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         float[,] neighborHeightmap = terrain.topNeighbor.terrainData.GetHeights(0, 0,
                                                                                    modelOutputWidth,
                                                                                    modelOutputHeight);
-
+        // Neighbor.
         Tensor neighborHeightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(neighborHeightmap);
-        SetTerrainHeights(neighborHeightmapTensor.ToReadOnlyArray());
-        //terrain.terrainData.SetHeights(0, 0, heightmap);
-        Tensor heightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
-        Tensor gradient = tensorMathHelper.GradientTensor(1.0f, 0.2f, modelOutputHeight, 
-                                                                      modelOutputHeight);
-        Tensor output = tensorMathHelper.MultiplyTensors(heightmapTensor, gradient);
-        //SetTerrainHeights(output.ToReadOnlyArray());
-        heightmapTensor.Dispose();
-        gradient.Dispose();
-        output.Dispose();
+        Tensor mirroredNeighbor = tensorMathHelper.MirrorTensor(neighborHeightmapTensor);
+        Tensor neighborGradient = tensorMathHelper.GradientTensor(0.0f, 1.0f, 
+                                                                  modelOutputHeight, 
+                                                                  modelOutputHeight);
+        Tensor neighborGradientScaled = tensorMathHelper.MultiplyTensors(mirroredNeighbor, neighborGradient);
+
+        // This.
+        Tensor thisHeightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
+        Tensor thisGradient = tensorMathHelper.GradientTensor(1.0f, 0.0f, 
+                                                              modelOutputHeight, 
+                                                              modelOutputHeight);
+        Tensor thisGradientScaled = tensorMathHelper.MultiplyTensors(thisHeightmapTensor, thisGradient);
+
+        Tensor blended = tensorMathHelper.AddTensor(neighborGradientScaled, thisGradientScaled);
+        SetTerrainHeightsRaw(blended.ToReadOnlyArray());
     }
 
     public void ClearTerrain()

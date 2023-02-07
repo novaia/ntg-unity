@@ -31,6 +31,21 @@ public class BaseTerrainGenerator : MonoBehaviour
         }
     }
 
+    public void SetTerrainHeightsRaw(Single[] heightmap)
+    {
+        terrain.terrainData.heightmapResolution = modelOutputWidth - 1;
+
+        float[,] newHeightmap = new float[modelOutputWidth, modelOutputHeight];
+        for(int i = 0; i < modelOutputArea; i++)
+        {
+            int x = (int)(i % modelOutputWidth);
+            int y = (int)Math.Floor((double)(i / modelOutputWidth));
+            newHeightmap[x, y] = (float)heightmap[i];
+        }
+
+        terrain.terrainData.SetHeights(0, 0, newHeightmap);
+    }
+
     public void SetTerrainHeights(Single[] heightmap)
     {
         terrain.terrainData.heightmapResolution = modelOutputWidth - 1;
