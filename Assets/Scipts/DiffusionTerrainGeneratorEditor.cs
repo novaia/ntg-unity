@@ -8,6 +8,10 @@ public class DiffusionTerrainGeneratorEditor : Editor
 {
     DiffusionTerrainGenerator generator;
 
+    SerializedProperty modelAsset;
+    SerializedProperty modelOutputWidth;
+    SerializedProperty modelOutputHeight;
+    SerializedProperty terrain;
     SerializedProperty diffusionIterationsFromScratch;
     SerializedProperty diffusionIterationsFromExisting;
     SerializedProperty existingHeightmapWeight;
@@ -19,6 +23,9 @@ public class DiffusionTerrainGeneratorEditor : Editor
     {
         generator = (DiffusionTerrainGenerator)target;
         generator.Setup();
+        modelAsset = serializedObject.FindProperty("modelAsset");
+        modelOutputWidth = serializedObject.FindProperty("modelOutputWidth");
+        modelOutputHeight = serializedObject.FindProperty("modelOutputHeight");
         diffusionIterationsFromScratch = serializedObject.FindProperty("diffusionIterationsFromScratch");
         diffusionIterationsFromExisting = serializedObject.FindProperty("diffusionIterationsFromExisting");
         existingHeightmapWeight = serializedObject.FindProperty("existingHeightmapWeight");
@@ -30,6 +37,10 @@ public class DiffusionTerrainGeneratorEditor : Editor
     {
         //DrawDefaultInspector();
         serializedObject.Update();
+
+        EditorGUILayout.PropertyField(modelAsset);
+        EditorGUILayout.PropertyField(modelOutputWidth);
+        EditorGUILayout.PropertyField(modelOutputHeight);
 
         if(GUILayout.Button("Clear Terrain"))
         {
@@ -57,6 +68,14 @@ public class DiffusionTerrainGeneratorEditor : Editor
             generator.SetTerrainHeights(heightmap);
         }
 
-        serializedObject.ApplyModifiedProperties();
+        if(GUILayout.Button("Blend With Neighbors"))
+        {
+            generator.BlendWithNeighbors();
+        }
+
+        if(serializedObject.ApplyModifiedProperties())
+        {
+            generator.Setup();
+        }
     }
 }

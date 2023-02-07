@@ -23,12 +23,17 @@ public class BaseTerrainGenerator : MonoBehaviour
 
     public virtual void Setup()
     {
+        terrain = GetComponent<Terrain>();
         modelOutputArea = modelOutputWidth * modelOutputHeight;
-        runtimeModel = ModelLoader.Load(modelAsset);
+        if(modelAsset != null)
+        {
+            runtimeModel = ModelLoader.Load(modelAsset);
+        }
     }
 
     public void SetTerrainHeights(Single[] heightmap)
     {
+        terrain.terrainData.heightmapResolution = modelOutputWidth - 1;
         float maxValue = heightmap[0];
         for(int i = 0; i < heightmap.Length; i++)
         {

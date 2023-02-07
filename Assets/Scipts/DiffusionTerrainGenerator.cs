@@ -35,6 +35,28 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         }
     }
 
+    public void BlendWithNeighbors()
+    {
+        float[,] heightmap = terrain.terrainData.GetHeights(0, 0,
+                                                            modelOutputWidth,
+                                                            modelOutputHeight); 
+        float[,] neighborHeightmap = terrain.topNeighbor.terrainData.GetHeights(0, 0,
+                                                                                   modelOutputWidth,
+                                                                                   modelOutputHeight);
+
+        Tensor neighborHeightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(neighborHeightmap);
+        SetTerrainHeights(neighborHeightmapTensor.ToReadOnlyArray());
+        //terrain.terrainData.SetHeights(0, 0, heightmap);
+        Tensor heightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
+        Tensor gradient = tensorMathHelper.GradientTensor(1.0f, 0.2f, modelOutputHeight, 
+                                                                      modelOutputHeight);
+        Tensor output = tensorMathHelper.MultiplyTensors(heightmapTensor, gradient);
+        //SetTerrainHeights(output.ToReadOnlyArray());
+        heightmapTensor.Dispose();
+        gradient.Dispose();
+        output.Dispose();
+    }
+
     public void ClearTerrain()
     {
         terrain.terrainData.SetHeights(0, 0, flatHeights);
