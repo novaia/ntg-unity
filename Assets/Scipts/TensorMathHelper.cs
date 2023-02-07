@@ -114,15 +114,23 @@ public class TensorMathHelper
         return newTensor;
     }
 
-    public Tensor GradientTensor(float leftValue, float rightValue, int width, int height)
+    public Tensor GradientTensor(float leftValue, 
+                                 float rightValue, 
+                                 float topValue, 
+                                 float bottomValue, 
+                                 int width, 
+                                 int height)
     {
         Tensor newTensor = new Tensor(1, width, height, 1);
-        float gradient = (rightValue - leftValue) / (width - 1);
+        float lrGradient = (rightValue - leftValue) / (width - 1);
+        float tbGradient = (topValue - bottomValue) / (height - 1);
         for(int x = 0; x < width; x++)
         {
             for(int y = 0; y < height; y++)
             {
-                newTensor[0, y, x, 0] = leftValue + (gradient * x);
+                float lrValue = leftValue + (lrGradient * x);
+                float tbValue = bottomValue + (tbGradient * y);
+                newTensor[0, y, x, 0] = lrValue + tbValue;
             }
         }
         return newTensor;
@@ -159,16 +167,33 @@ public class TensorMathHelper
         return newTensor;
     }
 
-    public Tensor MirrorTensor(Tensor tensor)
+    public Tensor MirrorTensor(Tensor tensor, bool mirrorX, bool mirrorY)
     {
         Tensor newTensor = new Tensor(tensor.batch, tensor.width, tensor.height, tensor.channels);
+
+        int xSign = 1;
+        int ySign = 1;
+        int xStart = 0;
+        int yStart = 0;
+
+        if(mirrorX)
+        {
+            xSign = -1;
+            xStart = tensor.width - 1;
+        }
+        if(mirrorY)
+        {
+            ySign = -1;
+            yStart = tensor.height - 1;
+        }
+
         for(int batch = 0; batch < tensor.batch; batch++)
         {
             for(int x = 0; x < tensor.width; x++)
             {
                 for(int y = 0; y < tensor.height; y++)
                 {
-                    newTensor[batch, y, x, 0] = tensor[batch, y, tensor.width - x - 1, 0];
+                    newTensor[batch, y, x, 0] = tensor[batch, yStart + ySign * y, xStart + xSign * x, 0];
                 }
             }
         }
