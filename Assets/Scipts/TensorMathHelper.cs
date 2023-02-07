@@ -153,7 +153,83 @@ public class TensorMathHelper
         {
             for(int y = 0; y < height; y++)
             {
-                newTensor[0, y, x, 0] = array[y, x];
+                newTensor[0, y, x, 0] = array[x, y];
+            }
+        }
+        return newTensor;
+    }
+
+    public Tensor MirrorTensor(Tensor tensor)
+    {
+        Tensor newTensor = new Tensor(tensor.batch, tensor.width, tensor.height, tensor.channels);
+        for(int batch = 0; batch < tensor.batch; batch++)
+        {
+            for(int x = 0; x < tensor.width; x++)
+            {
+                for(int y = 0; y < tensor.height; y++)
+                {
+                    newTensor[batch, y, x, 0] = tensor[batch, y, tensor.width - x - 1, 0];
+                }
+            }
+        }
+        return newTensor;
+    }
+
+    public Tensor ConcatenateTenors(Tensor leftTensor, Tensor rightTensor)
+    {
+        if(leftTensor.batch != rightTensor.batch || leftTensor.height != rightTensor.height || leftTensor.channels != rightTensor.channels)
+        {
+            Debug.LogError("Tensors must have the same batch, height and channels.");
+            return null;
+        }
+
+        Tensor newTensor = new Tensor(leftTensor.batch, leftTensor.width + rightTensor.width, leftTensor.height, leftTensor.channels);
+        for(int batch = 0; batch < leftTensor.batch; batch++)
+        {
+            for(int x = 0; x < leftTensor.width; x++)
+            {
+                for(int y = 0; y < leftTensor.height; y++)
+                {
+                    for(int channel = 0; channel < leftTensor.channels; channel++)
+                    {
+                        newTensor[batch, y, x, channel] = leftTensor[batch, y, x, channel];
+                    }
+                }
+            }
+            for(int x = 0; x < rightTensor.width; x++)
+            {
+                for(int y = 0; y < rightTensor.height; y++)
+                {
+                    for(int channel = 0; channel < rightTensor.channels; channel++)
+                    {
+                        newTensor[batch, y, x + leftTensor.width, channel] = rightTensor[batch, y, x, channel];
+                    }
+                }
+            }
+        }
+        return newTensor;
+    }
+
+    public Tensor SplitTensor(Tensor tensor)
+    {
+        if(tensor.width % 2 != 0)
+        {
+            Debug.LogError("Tensor width must be even.");
+            return null;
+        }
+
+        Tensor newTensor = new Tensor(tensor.batch, tensor.width / 2, tensor.height, tensor.channels);
+        for(int batch = 0; batch < tensor.batch; batch++)
+        {
+            for(int x = 0; x < newTensor.width; x++)
+            {
+                for(int y = 0; y < newTensor.height; y++)
+                {
+                    for(int channel = 0; channel < newTensor.channels; channel++)
+                    {
+                        newTensor[batch, y, x, channel] = tensor[batch, y, x, channel];
+                    }
+                }
             }
         }
         return newTensor;
