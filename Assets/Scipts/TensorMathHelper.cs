@@ -113,4 +113,49 @@ public class TensorMathHelper
         }
         return newTensor;
     }
+
+    public Tensor GradientTensor(float leftValue, float rightValue, int width, int height)
+    {
+        Tensor newTensor = new Tensor(1, width, height, 1);
+        float gradient = (rightValue - leftValue) / (width - 1);
+        for(int x = 0; x < width; x++)
+        {
+            for(int y = 0; y < height; y++)
+            {
+                newTensor[0, y, x, 0] = leftValue + (gradient * x);
+            }
+        }
+        return newTensor;
+    }
+
+    public Tensor MultiplyTensors(Tensor leftTensor, Tensor rightTensor)
+    {
+        if(leftTensor.length != rightTensor.length)
+        {
+            Debug.LogError("Tensors must be the same size.");
+            return null;
+        }
+
+        Tensor newTensor = new Tensor(leftTensor.batch, leftTensor.width, leftTensor.height, leftTensor.channels);
+        for(int i = 0; i < leftTensor.length; i++)
+        {
+            newTensor[i] = leftTensor[i] * rightTensor[i];
+        }
+        return newTensor;
+    }
+
+    public Tensor TwoDimensionalArrayToTensor(float[,] array)
+    {
+        int width = array.GetLength(0);
+        int height = array.GetLength(1);
+        Tensor newTensor = new Tensor(1, width, height, 1);
+        for(int x = 0; x < width; x++)
+        {
+            for(int y = 0; y < height; y++)
+            {
+                newTensor[0, y, x, 0] = array[y, x];
+            }
+        }
+        return newTensor;
+    }
 }
