@@ -68,9 +68,13 @@ public class DiffusionTerrainGeneratorEditor : Editor
             generator.SetTerrainHeights(heightmap);
         }
 
-        if(GUILayout.Button("Blend With Neighbors"))
+        if(GUILayout.Button("Blend With Left and Right Neighbors"))
         {
-            generator.BlendWithNeighbors();
+            generator.BlendWithNeighbors(true);
+        }
+        if(GUILayout.Button("Blend With Top and Bottom Neighbors"))
+        {
+            generator.BlendWithNeighbors(false);
         }
 
         if(serializedObject.ApplyModifiedProperties())

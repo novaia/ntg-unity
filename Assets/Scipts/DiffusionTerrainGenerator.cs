@@ -19,13 +19,12 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
     public override void Setup()
     {
         base.Setup();
-        randomNormalTensorForDisplay = tensorMathHelper.RandomNormalTensor(0, 
-                                                                           modelOutputWidth, 
-                                                                           modelOutputHeight, 
-                                                                           channels);
-        flatHeights = terrain.terrainData.GetHeights(0, 0, 
-                                                     modelOutputWidth, 
-                                                     modelOutputHeight);
+        randomNormalTensorForDisplay = tensorMathHelper.RandomNormalTensor(
+            0, modelOutputWidth, modelOutputHeight, channels
+        );
+        flatHeights = terrain.terrainData.GetHeights(
+            0, 0, modelOutputWidth, modelOutputHeight
+        );
         for(int x = 0; x < modelOutputWidth; x++)
         {
             for(int y = 0; y < modelOutputHeight; y++)
@@ -35,31 +34,102 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
         }
     }
 
-    public void BlendWithNeighbors()
+    private Tensor BlendWithNeighbor(float[,] neighborHeightmap, 
+                                     bool mirrorX, 
+                                     bool mirrorY, 
+                                     float leftGradient, 
+                                     float rightGradient,
+                                     float topGradient, 
+                                     float bottomGradient)
     {
-        float[,] heightmap = terrain.terrainData.GetHeights(0, 0,
-                                                            modelOutputWidth,
-                                                            modelOutputHeight); 
-        float[,] neighborHeightmap = terrain.topNeighbor.terrainData.GetHeights(0, 0,
-                                                                                   modelOutputWidth,
-                                                                                   modelOutputHeight);
         // Neighbor.
         Tensor neighborHeightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(neighborHeightmap);
-        Tensor mirroredNeighbor = tensorMathHelper.MirrorTensor(neighborHeightmapTensor);
-        Tensor neighborGradient = tensorMathHelper.GradientTensor(0.0f, 1.0f, 
-                                                                  modelOutputHeight, 
-                                                                  modelOutputHeight);
+        Tensor mirroredNeighbor = tensorMathHelper.MirrorTensor(neighborHeightmapTensor, mirrorX, mirrorY);
+        Tensor neighborGradient = tensorMathHelper.GradientTensor(
+            leftGradient, 
+            rightGradient, 
+            topGradient, 
+            bottomGradient,
+            modelOutputWidth, 
+            modelOutputHeight
+        );
         Tensor neighborGradientScaled = tensorMathHelper.MultiplyTensors(mirroredNeighbor, neighborGradient);
 
         // This.
-        Tensor thisHeightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
-        Tensor thisGradient = tensorMathHelper.GradientTensor(1.0f, 0.0f, 
-                                                              modelOutputHeight, 
-                                                              modelOutputHeight);
+        float[,] thisHeightmap = terrain.terrainData.GetHeights(0, 0, modelOutputWidth, modelOutputHeight);
+        Tensor thisHeightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(thisHeightmap);
+        Tensor thisGradient = tensorMathHelper.GradientTensor(
+            rightGradient, 
+            leftGradient, 
+            bottomGradient, 
+            topGradient,
+            modelOutputWidth,
+            modelOutputHeight
+        );
         Tensor thisGradientScaled = tensorMathHelper.MultiplyTensors(thisHeightmapTensor, thisGradient);
 
         Tensor blended = tensorMathHelper.AddTensor(neighborGradientScaled, thisGradientScaled);
-        SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+        return blended;
+    }
+
+    public void BlendWithNeighbors(bool leftRight)
+    {
+        if(leftRight)
+        {
+            // Left.
+            Terrain leftNeighbor = terrain.leftNeighbor;
+            if(leftNeighbor != null)
+            {
+                float[,] leftNeighborHeightmap = leftNeighbor.terrainData.GetHeights(
+                    0, 0, modelOutputWidth, modelOutputHeight
+                );
+                Tensor blended = BlendWithNeighbor(
+                    leftNeighborHeightmap, false, true, 0.0f, 0.0f, 0.0f, 1.0f
+                );
+                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+            }
+
+            // Right.
+            Terrain rightNeighbor = terrain.rightNeighbor;
+            if(rightNeighbor != null)
+            {
+                float[,] rightNeighborHeightmap = rightNeighbor.terrainData.GetHeights(
+                    0, 0, modelOutputWidth, modelOutputHeight
+                );
+                Tensor blended = BlendWithNeighbor(
+                    rightNeighborHeightmap, false, true, 0.0f, 0.0f, 1.0f, 0.0f
+                );
+                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+            }
+        }
+        else
+        {
+            // Top.
+            Terrain topNeighbor = terrain.topNeighbor;
+            if(topNeighbor != null)
+            {
+                float[,] topNeighborHeightmap = topNeighbor.terrainData.GetHeights(
+                    0, 0, modelOutputWidth, modelOutputHeight
+                );
+                Tensor blended = BlendWithNeighbor(
+                    topNeighborHeightmap, true, false, 0.0f, 1.0f, 0.0f, 0.0f
+                );
+                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+            }
+
+            // Bottom.
+            Terrain bottomNeighbor = terrain.bottomNeighbor;
+            if(bottomNeighbor != null)
+            {
+                float[,] bottomNeighborHeightmap = bottomNeighbor.terrainData.GetHeights(
+                    0, 0, modelOutputWidth, modelOutputHeight
+                );
+                Tensor blended = BlendWithNeighbor(
+                    bottomNeighborHeightmap, true, false, 1.0f, 0.0f, 0.0f, 0.0f
+                );
+                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+            }
+        }
     }
 
     public void ClearTerrain()

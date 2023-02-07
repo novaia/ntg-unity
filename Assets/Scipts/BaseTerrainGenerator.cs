@@ -17,7 +17,7 @@ public class BaseTerrainGenerator : MonoBehaviour
     protected int channels = 1;
 
     public Terrain terrain;
-    [SerializeField] protected float heightMultiplier = 10.0f;
+    [SerializeField] protected float heightMultiplier = 0.3f;
 
     protected delegate Tensor WorkerExecuter(IWorker worker, params object[] args);
 
@@ -33,7 +33,7 @@ public class BaseTerrainGenerator : MonoBehaviour
 
     public void SetTerrainHeightsRaw(Single[] heightmap)
     {
-        terrain.terrainData.heightmapResolution = modelOutputWidth - 1;
+        terrain.terrainData.heightmapResolution = modelOutputWidth - 2;
 
         float[,] newHeightmap = new float[modelOutputWidth, modelOutputHeight];
         for(int i = 0; i < modelOutputArea; i++)
@@ -48,7 +48,7 @@ public class BaseTerrainGenerator : MonoBehaviour
 
     public void SetTerrainHeights(Single[] heightmap)
     {
-        terrain.terrainData.heightmapResolution = modelOutputWidth - 1;
+        terrain.terrainData.heightmapResolution = modelOutputWidth - 2;
         float maxValue = heightmap[0];
         for(int i = 0; i < heightmap.Length; i++)
         {
