@@ -6,7 +6,7 @@ using Unity.Barracuda;
 
 public class DiffusionTerrainGenerator : BaseTerrainGenerator
 {
-    private const float maxSignalRate = 0.95f;
+    private const float maxSignalRate = 0.9f;
     private const float minSignalRate = 0.02f;
 
     [SerializeField] protected float existingHeightmapWeight;
@@ -86,7 +86,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                 Tensor blended = BlendWithNeighbor(
                     leftNeighborHeightmap, false, true, 0.0f, 0.0f, 0.0f, 1.0f
                 );
-                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+                SetTerrainHeights(blended.ToReadOnlyArray(), false);
             }
 
             // Right.
@@ -99,7 +99,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                 Tensor blended = BlendWithNeighbor(
                     rightNeighborHeightmap, false, true, 0.0f, 0.0f, 1.0f, 0.0f
                 );
-                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+                SetTerrainHeights(blended.ToReadOnlyArray(), false);
             }
         }
         else
@@ -114,7 +114,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                 Tensor blended = BlendWithNeighbor(
                     topNeighborHeightmap, true, false, 0.0f, 1.0f, 0.0f, 0.0f
                 );
-                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+                SetTerrainHeights(blended.ToReadOnlyArray(), false);
             }
 
             // Bottom.
@@ -127,7 +127,7 @@ public class DiffusionTerrainGenerator : BaseTerrainGenerator
                 Tensor blended = BlendWithNeighbor(
                     bottomNeighborHeightmap, true, false, 1.0f, 0.0f, 0.0f, 0.0f
                 );
-                SetTerrainHeightsRaw(blended.ToReadOnlyArray());
+                SetTerrainHeights(blended.ToReadOnlyArray(), false);
             }
         }
     }

@@ -31,39 +31,40 @@ public class BaseTerrainGenerator : MonoBehaviour
         }
     }
 
-    public void SetTerrainHeightsRaw(Single[] heightmap)
+    public void SetTerrainHeights(Single[] heightmap, bool scale = true)
     {
-        terrain.terrainData.heightmapResolution = modelOutputWidth - 2;
+        terrain.terrainData.heightmapResolution = modelOutputWidth;
 
-        float[,] newHeightmap = new float[modelOutputWidth, modelOutputHeight];
-        for(int i = 0; i < modelOutputArea; i++)
+        float scaleCoefficient = 1;
+        if(scale)
         {
-            int x = (int)(i % modelOutputWidth);
-            int y = (int)Math.Floor((double)(i / modelOutputWidth));
-            newHeightmap[x, y] = (float)heightmap[i];
+            float maxValue = heightmap[0];
+            for(int i = 0; i < heightmap.Length; i++)
+            {
+                if(heightmap[i] > maxValue)
+                {
+                    maxValue = heightmap[i];
+                }
+            }
+            scaleCoefficient = (1 / maxValue) * heightMultiplier;
         }
 
-        terrain.terrainData.SetHeights(0, 0, newHeightmap);
-    }
-
-    public void SetTerrainHeights(Single[] heightmap)
-    {
-        terrain.terrainData.heightmapResolution = modelOutputWidth - 2;
-        float maxValue = heightmap[0];
-        for(int i = 0; i < heightmap.Length; i++)
+        float[,] newHeightmap = new float[modelOutputWidth+1, modelOutputHeight+1];
+        for(int x = 0; x < modelOutputWidth; x++)
         {
-            if(heightmap[i] > maxValue)
+            for(int y = 0; y < modelOutputHeight; y++)
             {
-                maxValue = heightmap[i];
+                newHeightmap[x, y] = heightmap[x + y * modelOutputWidth] * scaleCoefficient;
             }
         }
 
-        float[,] newHeightmap = new float[modelOutputWidth, modelOutputHeight];
-        for(int i = 0; i < modelOutputArea; i++)
+        for(int i = 0; i < modelOutputWidth+1; i++)
         {
-            int x = (int)(i % modelOutputWidth);
-            int y = (int)Math.Floor((double)(i / modelOutputWidth));
-            newHeightmap[x, y] = (float)heightmap[i] / maxValue * heightMultiplier;
+            newHeightmap[i, modelOutputHeight] = newHeightmap[i, modelOutputHeight-1];
+        }
+        for(int i = 0; i < modelOutputHeight+1; i++)
+        {
+            newHeightmap[modelOutputWidth, i] = newHeightmap[modelOutputWidth-1, i];
         }
 
         terrain.terrainData.SetHeights(0, 0, newHeightmap);
