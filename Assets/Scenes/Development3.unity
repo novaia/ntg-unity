@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 12ccb828343c3405fb94289774b51aad, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.43718317, g: 0.75444984, b: 1.0290304, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -123,98 +123,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1001 &488504820
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 122931783027493701, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: random
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 122931783027493701, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: terrain
-      value: 
-      objectReference: {fileID: 1172839601}
-    - target: {fileID: 122931783027493701, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: Highlands2
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 122931783027493701, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: randomNormal
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 122931783027493701, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: latentVectors
-      value: 
-      objectReference: {fileID: 488504821}
-    - target: {fileID: 122931783027493701, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: BigMountainTopLeft
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_RootOrder
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 604.284
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 537.62305
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -100.157135
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2422997177360071417, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6171765686450083041, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-      propertyPath: m_Name
-      value: TerrainGenerator
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
---- !u!114 &488504821 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 742357216253249462, guid: 41b76fd7b9e592347baa8d6ecb8bb4c1, type: 3}
-  m_PrefabInstance: {fileID: 488504820}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d8c7a77658d5d14d832a7cd8fea37e0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &789836322
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,6 +218,7 @@ GameObject:
   - component: {fileID: 1172839602}
   - component: {fileID: 1172839601}
   - component: {fileID: 1172839600}
+  - component: {fileID: 1172839603}
   m_Layer: 0
   m_Name: Terrain
   m_TagString: Untagged
@@ -353,7 +262,7 @@ Terrain:
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
-  m_MaterialTemplate: {fileID: 10652, guid: 0000000000000000f000000000000000, type: 0}
+  m_MaterialTemplate: {fileID: 2100000, guid: 0e7ca3777da265b4c859e7a3b2df6425, type: 2}
   m_BakeLightProbesForTrees: 1
   m_PreserveTreePrototypeLayers: 0
   m_DeringLightProbesForTrees: 1
@@ -375,8 +284,40 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1172839603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1172839599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0acc4dc86fd78ba4e8e8e1abb84ec5a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  modelAsset: {fileID: 5022602860645237092, guid: c05bda58b7f72d74dac65724ea8b45fa, type: 3}
+  modelOutputWidth: 256
+  modelOutputHeight: 256
+  terrain: {fileID: 1172839601}
+  heightMultiplier: 0.3
+  BigMountainTopLeft: 0
+  CentralValley: 0
+  Lowlands: 1
+  Highlands: 0
+  DiagonalRidge: 0
+  Highlands2: 0
+  CentralValley2: 0
+  BottomRightDecline: 0
+  BottomRightDecline2: 0
+  DivergingRidges: 0
+  Highlands3: 0
+  ValleyPass: 0
+  CentralValley3: 0
+  BottomLeftDecline: 0
+  randomNormal: 1
 --- !u!1 &1559584191
 GameObject:
   m_ObjectHideFlags: 0
