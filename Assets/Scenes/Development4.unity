@@ -298,15 +298,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc24f765adc8ac043874ce861fed5a2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  modelAsset: {fileID: 5022602860645237092, guid: 42edd1bc71c2caa45837972c7ec7b9eb, type: 3}
+  modelAsset: {fileID: 5022602860645237092, guid: d17c0e44daadad84aa3353f9f313f984, type: 3}
   modelOutputWidth: 256
   modelOutputHeight: 256
   terrain: {fileID: 815706691}
-  heightMultiplier: 0.3
+  heightMultiplier: 0.4
   existingHeightmapWeight: 1
   diffusionIterationsFromScratch: 20
   diffusionIterationsFromExisting: 20
-  startingDiffusionIterationFromExisting: 0
+  startingDiffusionIterationFromExisting: 15
 --- !u!1 &1208450411
 GameObject:
   m_ObjectHideFlags: 0
@@ -419,7 +419,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1236848598
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -440,7 +440,7 @@ MonoBehaviour:
   existingHeightmapWeight: 1
   diffusionIterationsFromScratch: 20
   diffusionIterationsFromExisting: 20
-  startingDiffusionIterationFromExisting: 0
+  startingDiffusionIterationFromExisting: 15
 --- !u!154 &1236848599
 TerrainCollider:
   m_ObjectHideFlags: 0
@@ -519,7 +519,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1692298788
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -537,10 +537,10 @@ MonoBehaviour:
   modelOutputHeight: 256
   terrain: {fileID: 1692298790}
   heightMultiplier: 0.3
-  existingHeightmapWeight: 1
+  existingHeightmapWeight: 0.4
   diffusionIterationsFromScratch: 20
   diffusionIterationsFromExisting: 20
-  startingDiffusionIterationFromExisting: 0
+  startingDiffusionIterationFromExisting: 15
 --- !u!154 &1692298789
 TerrainCollider:
   m_ObjectHideFlags: 0
