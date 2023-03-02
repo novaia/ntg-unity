@@ -38,6 +38,7 @@ class BlendWithNeighbors : TerrainPaintTool<BlendWithNeighbors>
         float[,] heightmap = terrain.terrainData.GetHeights(0, 0, 256, 256);
         Tensor heightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
         Tensor horizontalMirror = tensorMathHelper.MirrorTensor(heightmapTensor, false, true);
+        Tensor verticalMirror = tensorMathHelper.MirrorTensor(heightmapTensor, true, false);
 
         Tensor gradient = new Tensor(1, 256 * 3, 256 * 3, 1);
         Vector2 center = new Vector2(radius1 + radius2, radius1 + radius2);
@@ -82,6 +83,54 @@ class BlendWithNeighbors : TerrainPaintTool<BlendWithNeighbors>
             }
             Tensor leftScaled = tensorMathHelper.MultiplyTensors(leftGradient, horizontalMirror);
             SetTerrainHeights(leftNeighbor, leftScaled.ToReadOnlyArray(), false);
+        }
+
+        Terrain rightNeighbor = terrain.rightNeighbor;
+        if(rightNeighbor != null)
+        {
+            // Right.
+            Tensor rightGradient = new Tensor(1, 256, 256, 1);
+            for(int x = 0; x < 256; x++)
+            {
+                for(int y = 0; y < 256; y++)
+                {
+                    rightGradient[0, x, y, 0] = gradient[0, 256 + y, 256 * 2 + x, 0];
+                }
+            }
+            Tensor rightScaled = tensorMathHelper.MultiplyTensors(rightGradient, horizontalMirror);
+            SetTerrainHeights(rightNeighbor, rightScaled.ToReadOnlyArray(), false);
+        }
+
+        Terrain topNeighbor = terrain.topNeighbor;
+        if(topNeighbor != null)
+        {
+            // Top.
+            Tensor topGradient = new Tensor(1, 256, 256, 1);
+            for(int x = 0; x < 256; x++)
+            {
+                for(int y = 0; y < 256; y++)
+                {
+                    topGradient[0, x, y, 0] = gradient[0, 256 * 2 + y, 256 + x, 0];
+                }
+            }
+            Tensor topScaled = tensorMathHelper.MultiplyTensors(topGradient, verticalMirror);
+            SetTerrainHeights(topNeighbor, topScaled.ToReadOnlyArray(), false);
+        }
+
+        Terrain bottomNeighbor = terrain.bottomNeighbor;
+        if(bottomNeighbor != null)
+        {
+            // Bottom.
+            Tensor bottomGradient = new Tensor(1, 256, 256, 1);
+            for(int x = 0; x < 256; x++)
+            {
+                for(int y = 0; y < 256; y++)
+                {
+                    bottomGradient[0, x, y, 0] = gradient[0, y, 256 + x, 0];
+                }
+            }
+            Tensor bottomScaled = tensorMathHelper.MultiplyTensors(bottomGradient, verticalMirror);
+            SetTerrainHeights(bottomNeighbor, bottomScaled.ToReadOnlyArray(), false);
         }
     }
 
