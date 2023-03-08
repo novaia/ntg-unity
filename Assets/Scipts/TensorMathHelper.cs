@@ -259,4 +259,17 @@ public class TensorMathHelper
         }
         return newTensor;
     }
+
+    public Tensor PopulatedTensor(float element, int width, int height)
+    {
+        Tensor populatedTensor = new Tensor(1, width, height, 1);
+        for(int x = 0; x < width; x++)
+        {
+            for(int y = 0; y < height; y ++)
+            {
+                populatedTensor[0, x, y, 0] = element;
+            }
+        }
+        return populatedTensor;
+    }
 }
