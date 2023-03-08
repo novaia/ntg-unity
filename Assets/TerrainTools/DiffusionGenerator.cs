@@ -27,10 +27,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
     private const float minSignalRate = 0.02f;
 
     // Upsampling.
-    private NNModel upSamplingModelAsset;
-    private Model upSamplingRuntimeModel;
-    private int upSampleOutputWidth = 2048;
-    private int upSampleOutputHeight = 2048;
+    private int upSampleFactor = 2;
 
     public override string GetName()
     {
@@ -44,33 +41,16 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
 
     public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
     {
-        modelAsset = (NNModel)EditorGUILayout.ObjectField(
-            "Model Asset", modelAsset, typeof(NNModel), false
-        );
-        upSamplingModelAsset = (NNModel)EditorGUILayout.ObjectField(
-            "Upsampling Model Asset", upSamplingModelAsset, typeof(NNModel), false
-        );
-
+        modelAsset = (NNModel)EditorGUILayout.ObjectField("Model Asset", modelAsset, typeof(NNModel), false);
         modelOutputWidth = EditorGUILayout.IntField("Model Output Width", modelOutputWidth);
         modelOutputHeight = EditorGUILayout.IntField("Model Output Height", modelOutputHeight);
         heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
+        upSampleFactor = EditorGUILayout.IntField("UpSample Factor", upSampleFactor);
 
         if(GUILayout.Button("Generate Terrain From Scratch"))
         {
             float[] heightmap = GenerateHeightmap();
-            Debug.Log("Heightmap width outside: " + (int)(heightmap.Length/2048));
-            
-            int resolution = 0;
-            for(int i = 1; i < 2048; i++)
-            {
-                float difference = Mathf.Abs(heightmap[i-1] - heightmap[i]);
-                if(difference >= 0.000001f)
-                {
-                    resolution++;
-                }
-            }
-            Debug.Log("Resolution:" + resolution);
-            SetTerrainHeights(terrain, heightmap, upSampleOutputWidth, upSampleOutputHeight);
+            SetTerrainHeights(terrain, heightmap, modelOutputWidth * upSampleFactor, modelOutputHeight * upSampleFactor);
         }
 
         bValue = EditorGUILayout.FloatField("B Value", bValue);
@@ -96,64 +76,27 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 return null;
             }
         }
-        if(upSamplingRuntimeModel == null)
-        {
-            if(upSamplingModelAsset != null)
-            {
-                upSamplingRuntimeModel = ModelLoader.Load(upSamplingModelAsset);
-            }
-            else
-            {
-                Debug.LogError("Upsampling model asset is null.");
-                return null;
-            }
-        }
 
-        float[] heightmap = new float[upSampleOutputWidth * upSampleOutputHeight];
+        float[] heightmap = new float[modelOutputWidth * upSampleFactor * modelOutputHeight * upSampleFactor];
         using(var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel))
         {
             Tensor input = tensorMathHelper.RandomNormalTensor(
                 1, modelOutputWidth, modelOutputHeight, channels
             );
-            Tensor rdOutput = ReverseDiffusion(worker, input, 20);
-            //Debug.Log("Sample RD Output Element: " + rdOutput[0]);
-            Debug.Log("First 10 RD Output Elements: ");
-            for(int i = 0; i < 10; i++)
+            Tensor reverseDiffusionOutput = ReverseDiffusion(worker, input, 20);
+            if(upSampleFactor > 1)
             {
-                Debug.Log(i + ": " + rdOutput[i]);
+                Tensor upSampledOutput = BicubicUpSample(reverseDiffusionOutput, 2);
+                heightmap = upSampledOutput.ToReadOnlyArray();
+                upSampledOutput.Dispose();
+            }
+            else
+            {
+                heightmap = reverseDiffusionOutput.ToReadOnlyArray();
             }
 
-            using(var worker2 = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, upSamplingRuntimeModel))
-            {
-                worker2.Execute(rdOutput);
-                Tensor upOutput = worker2.PeekOutput();
-                int resolution = 0;
-                for(int i = 1; i < 2048; i++)
-                {
-                    float difference = Mathf.Abs(upOutput[0, i-1, 0, 0] - upOutput[0, i, 0, 0]);
-                    if(difference >= 0.000001f)
-                    {
-                        resolution++;
-                    }
-                }
-                //Debug.Log("Sample Heightmap Element: " + upOutput[0]);
-                //Debug.Log("Sample Heightmap Element (Double): "+ (double)upOutput[0]);
-
-                Debug.Log("First 10 UP Output Elements: ");
-                for(int i = 0; i < 10; i++)
-                {
-                    Debug.Log(i + ": " + upOutput[i]);
-                }
-
-                Debug.Log("Tensor Resolution: " + resolution);
-                Debug.Log("Width: " + upOutput.width + ", Height: " + upOutput.height);
-                heightmap = upOutput.ToReadOnlyArray();
-                Debug.Log("Heightmap width: " + (int)(heightmap.Length/2048));
-                upOutput.Dispose();
-            }   
-
             input.Dispose();
-            rdOutput.Dispose();
+            reverseDiffusionOutput.Dispose();
         }
 
         return heightmap;
@@ -457,12 +400,13 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         terrain.terrainData.SetHeights(0, 0, newHeightmap);
     }
 
-    private Tensor BicubicUpSample(Tensor orignal, int factor)
+    private Tensor BicubicUpSample(Tensor original, int factor)
     {
-        Tensor upSampled = new Tensor(1, orignal.width * factor, orignal.height * factor, 1);
-        for(int x = 0; x < orignal.width; x++)
+        Tensor upSampled = new Tensor(1, original.width * factor, original.height * factor, 1);
+        Debug.Log("New Width: " + upSampled.width);
+        for(int x = 1; x < original.width - 2; x++)
         {
-            for(int y = 0; y < orignal.height; y++)
+            for(int y = 0; y < upSampled.height; y++)
             {
                 // f(x) = ax^3 + bx^2 + cx + d
                 // f(0) = d = p1
@@ -476,10 +420,11 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 // a = (tangentEnd - tangentStart) - 2(p2 - p1 - tangentStart)
                 // b = p2 - p1 - tangentStart - a
 
-                float p0 = original[0, y, x - 1, 0];
-                float p1 = original[0, y, x, 0];
-                float p2 = original[0, y, x + 1, 0];
-                float p3 = original[0, y, x + 2, 0];
+                int remappedY = y / factor;
+                float p0 = original[0, remappedY, x - 1, 0];
+                float p1 = original[0, remappedY, x, 0];
+                float p2 = original[0, remappedY, x + 1, 0];
+                float p3 = original[0, remappedY, x + 2, 0];
 
                 float tangentStart = p0 - p1;
                 float tangentEnd = p2 - p3;
@@ -500,7 +445,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 upSampled [0, y, x * factor, 0] = p1;
             }
         }
-
+        Debug.Log("Successfuly upsampled");
         return upSampled;
     }
 
@@ -510,7 +455,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         for(int i = 0; i < num_samples; i++)
         {
             float x = (float)i / (float)num_samples;
-            samples[i] = a * Mathf.Pow(x, 3); + b * Mathf.Pow(x, 2) + c * x + d;
+            samples[i] = a * Mathf.Pow(x, 3) + b * Mathf.Pow(x, 2) + c * x + d;
         }
         return samples;
     }
