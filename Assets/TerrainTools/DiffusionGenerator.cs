@@ -11,6 +11,8 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
     private TensorMathHelper tensorMathHelper = new TensorMathHelper();
     private int modelOutputWidth = 256;
     private int modelOutputHeight = 256;
+    private int upSampledWidth = 0;
+    private int upSampledHeight = 0;
     private float heightMultiplier = 0.3f;
     private int channels = 1;
     private NNModel modelAsset;
@@ -27,7 +29,6 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
     private const float minSignalRate = 0.02f;
 
     // Upsampling.
-    private int upSampleFactor = 2;
     private enum UpSampleMode {Bicubic};
     private UpSampleMode upSampleMode = UpSampleMode.Bicubic;
     // Left: upsample resolution, right: upsample factor.
@@ -57,16 +58,16 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         modelOutputWidth = EditorGUILayout.IntField("Model Output Width", modelOutputWidth);
         modelOutputHeight = EditorGUILayout.IntField("Model Output Height", modelOutputHeight);
         heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
-        upSampleFactor = EditorGUILayout.IntField("UpSample Factor", upSampleFactor);
         upSampleMode = (UpSampleMode)EditorGUILayout.EnumPopup("UpSample Mode", upSampleMode);
         upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup("UpSample Resolution", upSampleResolution);
+        radius1 = EditorGUILayout.FloatField("Radius 1", radius1);
+        radius2 = EditorGUILayout.FloatField("Radius 2", radius2);
 
         if(GUILayout.Button("Generate Terrain From Scratch"))
         {
+            CalculateUpSampledDimensions();
             float[] heightmap = GenerateHeightmap();
-            int width = modelOutputWidth * (int)upSampleResolution;
-            int height = modelOutputHeight * (int)upSampleResolution;
-            SetTerrainHeights(terrain, heightmap, width, height);
+            SetTerrainHeights(terrain, heightmap, upSampledWidth, upSampledHeight);
         }
 
         bValue = EditorGUILayout.FloatField("B Value", bValue);
@@ -78,15 +79,11 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         }
     }
 
-    private int[] CalculateUpSampledDimensions()
+    private void CalculateUpSampledDimensions()
     {
         int upSampleFactor = (int)upSampleResolution;
-        int[] dimensions = new int[] 
-        {
-            modelOutputWidth * upSampleFactor,
-            modelOutputHeight * upSampleFactor,
-        };
-        return dimensions;
+        upSampledWidth = modelOutputWidth * upSampleFactor;
+        upSampledHeight = modelOutputHeight * upSampleFactor;
     }
 
     private float[] GenerateHeightmap()
@@ -104,8 +101,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
             }
         }
 
-        int[] heightmapDimensions = CalculateUpSampledDimensions();
-        float[] heightmap = new float[heightmapDimensions[0] * heightmapDimensions[1]];
+        float[] heightmap = new float[upSampledWidth * upSampledHeight];
         using(var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel))
         {
             Tensor input = tensorMathHelper.RandomNormalTensor(
@@ -255,15 +251,11 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                                      int xOffset, 
                                      int yOffset)
     {
-        float [,] neighborHeightmapArray = neighbor.terrainData.GetHeights(
-            0, 0, modelOutputWidth, modelOutputHeight
-        );
-        Tensor neighborHeightmap = tensorMathHelper.TwoDimensionalArrayToTensor(neighborHeightmapArray);
 
-        Tensor localGradient = new Tensor(1, 256, 256, 1);
-        for(int x = 0; x < 256; x++)
+        Tensor localGradient = new Tensor(1, upSampledHeight, upSampledWidth, 1);
+        for(int x = 0; x < upSampledWidth; x++)
         {
-            for(int y = 0; y < 256; y++)
+            for(int y = 0; y < upSampledHeight; y++)
             {
                 localGradient[0, x, y, 0] = gradient[0, yOffset + y, xOffset + x, 0];
             }
@@ -272,13 +264,18 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
 
         if(keepNeighborHeights)
         {
+            float [,] neighborHeightmapArray = neighbor.terrainData.GetHeights(
+                0, 0, upSampledWidth, upSampledHeight
+            );
+            Tensor neighborHeightmap = tensorMathHelper.TwoDimensionalArrayToTensor(neighborHeightmapArray);
             Tensor OnesTensor = tensorMathHelper.PopulatedTensor(1.0f, modelOutputWidth, modelOutputHeight);
             Tensor inverseLocalGradient = tensorMathHelper.SubtractTensor(OnesTensor, localGradient);
             Tensor scaledNeighbor = tensorMathHelper.MultiplyTensors(inverseLocalGradient, neighborHeightmap);
             Tensor blended = tensorMathHelper.AddTensor(scaledMirror, scaledNeighbor);
 
-            SetTerrainHeights(neighbor, blended.ToReadOnlyArray(), modelOutputWidth, modelOutputHeight, false);
+            SetTerrainHeights(neighbor, blended.ToReadOnlyArray(), upSampledWidth, upSampledHeight, false);
 
+            neighborHeightmap.Dispose();
             OnesTensor.Dispose();
             inverseLocalGradient.Dispose();
             scaledNeighbor.Dispose();
@@ -286,29 +283,26 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         }
         else
         {
-            SetTerrainHeights(neighbor, scaledMirror.ToReadOnlyArray(), modelOutputWidth, modelOutputHeight, false);
+            SetTerrainHeights(neighbor, scaledMirror.ToReadOnlyArray(), upSampledWidth, upSampledHeight, false);
         }
-
-        neighborHeightmap.Dispose();
+ 
         localGradient.Dispose();
         scaledMirror.Dispose();
     }
 
     private void BlendAllNeighbors(Terrain terrain)
     {
-        float[,] heightmap = terrain.terrainData.GetHeights(0, 0, 256, 256);
+        float[,] heightmap = terrain.terrainData.GetHeights(0, 0, upSampledWidth, upSampledHeight);
         Tensor heightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
         Tensor horizontalMirror = tensorMathHelper.MirrorTensor(heightmapTensor, false, true);
         Tensor verticalMirror = tensorMathHelper.MirrorTensor(heightmapTensor, true, false);
         Tensor bothMirror = tensorMathHelper.MirrorTensor(heightmapTensor, true, true);
 
-        Debug.Log("Mirror Width: " + horizontalMirror.width);
-
-        Tensor gradient = new Tensor(1, 256 * 3, 256 * 3, 1);
+        Tensor gradient = new Tensor(1, upSampledWidth * 3, upSampledHeight * 3, 1);
         Vector2 center = new Vector2(radius1 + radius2, radius1 + radius2);
-        for(int x = 0; x < 256 * 3; x++)
+        for(int x = 0; x < upSampledWidth * 3; x++)
         {
-            for(int y = 0; y < 256 * 3; y++)
+            for(int y = 0; y < upSampledHeight * 3; y++)
             {
                 float distance = Vector2.Distance(new Vector2(x, y), center);
                 if(distance < radius1)
@@ -317,7 +311,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 }
                 else
                 {
-                    float gradientValue = (-1.0f / 128.0f) * distance + bValue;
+                    float gradientValue = (-1.0f / radius1) * distance + bValue;
                     if(gradientValue > 1.0f)
                     {
                         gradient[0, x, y, 0] = 1.0f;
@@ -329,8 +323,6 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 }
             }
         }
-
-        Tensor gradientTest = tensorMathHelper.GradientTensor(0.0f, 0.0f, 1.0f, 0.0f, 256, 256);
         
         Terrain topLeftNeighbor = null;
         Terrain bottomLeftNeighbor = null;
@@ -341,7 +333,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         Terrain leftNeighbor = terrain.leftNeighbor;
         if(leftNeighbor != null)
         {
-            BlendSingleNeighbor(leftNeighbor, horizontalMirror, gradient, 0, 256);
+            BlendSingleNeighbor(leftNeighbor, horizontalMirror, gradient, 0, upSampledHeight);
 
             topLeftNeighbor = leftNeighbor.topNeighbor;
             bottomLeftNeighbor = leftNeighbor.bottomNeighbor;
@@ -350,7 +342,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         Terrain rightNeighbor = terrain.rightNeighbor;
         if(rightNeighbor != null)
         {
-            BlendSingleNeighbor(rightNeighbor, horizontalMirror, gradient, 512, 256);
+            BlendSingleNeighbor(rightNeighbor, horizontalMirror, gradient, upSampledWidth * 2, upSampledHeight);
 
             topRightNeighbor = rightNeighbor.topNeighbor;
             bottomRightNeighbor = rightNeighbor.bottomNeighbor;
@@ -359,18 +351,18 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         Terrain topNeighbor = terrain.topNeighbor;
         if(topNeighbor != null)
         {
-            BlendSingleNeighbor(topNeighbor, verticalMirror, gradient, 256, 512);
+            BlendSingleNeighbor(topNeighbor, verticalMirror, gradient, upSampledWidth, upSampledHeight * 2);
         }
 
         Terrain bottomNeighbor = terrain.bottomNeighbor;
         if(bottomNeighbor != null)
         {
-            BlendSingleNeighbor(bottomNeighbor, verticalMirror, gradient, 256, 0);
+            BlendSingleNeighbor(bottomNeighbor, verticalMirror, gradient, upSampledWidth, 0);
         }
         
         if(topLeftNeighbor != null)
         {
-            BlendSingleNeighbor(topLeftNeighbor, bothMirror, gradient, 0, 512);
+            BlendSingleNeighbor(topLeftNeighbor, bothMirror, gradient, 0, upSampledHeight * 2);
         }
 
         if(bottomLeftNeighbor != null)
@@ -380,19 +372,18 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
 
         if(topRightNeighbor != null)
         {
-            BlendSingleNeighbor(topRightNeighbor, bothMirror, gradient, 512, 512);
+            BlendSingleNeighbor(topRightNeighbor, bothMirror, gradient, upSampledWidth * 2, upSampledHeight * 2);
         }
 
         if(bottomRightNeighbor != null)
         {
-            BlendSingleNeighbor(bottomRightNeighbor, bothMirror, gradient, 512, 0);
+            BlendSingleNeighbor(bottomRightNeighbor, bothMirror, gradient, upSampledWidth * 2, 0);
         }
     }
 
 
     public void SetTerrainHeights(Terrain terrain, float[] heightmap, int width, int height, bool scale = true)
     {
-        Debug.Log("Width: " + width);
         terrain.terrainData.heightmapResolution = width;
 
         float scaleCoefficient = 1;
@@ -463,7 +454,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
 
     private float[] BicubicUpSample(Tensor original, int factor)
     {
-        Tensor upSampledWidth = new Tensor(1, original.height, original.width * factor, 1);
+        Tensor upSampledX = new Tensor(1, original.height, original.width * factor, 1);
         Tensor upSampled = new Tensor(1, original.height * factor, original.width * factor, 1);
 
         float p0 = 0;
@@ -472,33 +463,77 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         float p3 = 0;
 
         // Up sample width.
-        for(int x = 1; x < original.width - 2; x++)
+        for(int x = 0; x < original.width; x++)
         {
             for(int y = 0; y < original.height; y++)
             {
-                p0 = original[0, y, x - 1, 0];
+                // p0
+                if(x - 1 < 0)
+                {
+                    System.Random random = new System.Random();
+                    p0 = (float)random.NextDouble();
+                }
+                else
+                {
+                    p0 = original[0, y, x - 1, 0];
+                }
+
+                // p1
                 p1 = original[0, y, x, 0];
-                p2 = original[0, y, x + 1, 0];
-                p3 = original[0, y, x + 2, 0];
+
+                // p2 and p3
+                if(x + 2 >= original.width)
+                {
+                    System.Random random = new System.Random();
+                    p2 = (float)random.NextDouble();
+                    p3 = (float)random.NextDouble();
+                }
+                else
+                {
+                    p2 = original[0, y, x + 1, 0];
+                    p3 = original[0, y, x + 2, 0];
+                }
 
                 float[] samples = SampleCubic(factor, p0, p1, p2, p3);
                 for(int i = 0; i < factor - 1; i++)
                 {
-                    upSampledWidth[0, y, x * factor + i + 1, 0] = samples[i];
+                    upSampledX[0, y, x * factor + i + 1, 0] = samples[i];
                 }
-                upSampledWidth [0, y, x * factor, 0] = p1;
+                upSampledX [0, y, x * factor, 0] = p1;
             }
         }
 
         // Up sample height.
-        for(int x = 0; x < upSampledWidth.width; x++)
+        for(int x = 0; x < upSampledX.width; x++)
         {
-            for(int y = 1; y < original.height - 2; y++)
+            for(int y = 0; y < original.height; y++)
             {
-                p0 = upSampledWidth[0, y - 1, x, 0];
-                p1 = upSampledWidth[0, y, x, 0];
-                p2 = upSampledWidth[0, y + 1, x, 0];
-                p3 = upSampledWidth[0, y + 2, x, 0];
+                // p0
+                if(y - 1 < 0)
+                {
+                    System.Random random = new System.Random();
+                    p0 = (float)random.NextDouble();
+                }
+                else
+                {
+                    p0 = upSampledX[0, y - 1, x, 0];
+                }
+
+                // p1
+                p1 = upSampledX[0, y, x, 0];
+
+                // p2 and p3
+                if(y + 2 >= original.height)
+                {
+                    System.Random random = new System.Random();
+                    p2 = (float)random.NextDouble();
+                    p3 = (float)random.NextDouble();
+                }
+                else
+                {
+                    p2 = upSampledX[0, y + 1, x, 0];
+                    p3 = upSampledX[0, y + 2, x, 0];
+                }
 
                 float[] samples = SampleCubic(factor, p0, p1, p2, p3);
                 for(int i = 0; i < factor - 1; i++)
@@ -509,8 +544,18 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
             }
         }
 
+        /*for(int x = 0; x < upSampled.width; x++)
+        {
+            upSampled[0, 0, x, 0] = upSampled[0, 3, x, 0];
+            upSampled[0, 1, x, 0] = upSampled[0, 3, x, 0];
+            upSampled[0, upSampled.height - 1, x, 0] = upSampled[0, upSampled.height - 5, x, 0];
+            upSampled[0, upSampled.height - 2, x, 0] = upSampled[0, upSampled.height - 5, x, 0];
+            upSampled[0, upSampled.height - 3, x, 0] = upSampled[0, upSampled.height - 5, x, 0];
+            upSampled[0, upSampled.height - 4, x, 0] = upSampled[0, upSampled.height - 5, x, 0];
+        }*/
+
         float[] upSampledArray = upSampled.ToReadOnlyArray();
-        upSampledWidth.Dispose();
+        upSampledX.Dispose();
         upSampled.Dispose();
         return upSampledArray;
     }
