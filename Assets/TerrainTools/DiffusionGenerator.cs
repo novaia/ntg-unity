@@ -28,6 +28,18 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
 
     // Upsampling.
     private int upSampleFactor = 2;
+    private enum UpSampleMode {Bicubic};
+    private UpSampleMode upSampleMode = UpSampleMode.Bicubic;
+    // Left: upsample resolution, right: upsample factor.
+    private enum UpSampleResolution 
+    {
+        _256 = 1, 
+        _512 = 2, 
+        _1024 = 4, 
+        _2048 = 8, 
+        _4096 = 16
+    };
+    private UpSampleResolution upSampleResolution = UpSampleResolution._512;
 
     public override string GetName()
     {
@@ -46,11 +58,15 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         modelOutputHeight = EditorGUILayout.IntField("Model Output Height", modelOutputHeight);
         heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
         upSampleFactor = EditorGUILayout.IntField("UpSample Factor", upSampleFactor);
+        upSampleMode = (UpSampleMode)EditorGUILayout.EnumPopup("UpSample Mode", upSampleMode);
+        upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup("UpSample Resolution", upSampleResolution);
 
         if(GUILayout.Button("Generate Terrain From Scratch"))
         {
             float[] heightmap = GenerateHeightmap();
-            SetTerrainHeights(terrain, heightmap, modelOutputWidth * upSampleFactor, modelOutputHeight * upSampleFactor);
+            int width = modelOutputWidth * (int)upSampleResolution;
+            int height = modelOutputHeight * (int)upSampleResolution;
+            SetTerrainHeights(terrain, heightmap, width, height);
         }
 
         bValue = EditorGUILayout.FloatField("B Value", bValue);
@@ -60,6 +76,17 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         {
             BlendAllNeighbors(terrain);
         }
+    }
+
+    private int[] CalculateUpSampledDimensions()
+    {
+        int upSampleFactor = (int)upSampleResolution;
+        int[] dimensions = new int[] 
+        {
+            modelOutputWidth * upSampleFactor,
+            modelOutputHeight * upSampleFactor,
+        };
+        return dimensions;
     }
 
     private float[] GenerateHeightmap()
@@ -77,18 +104,19 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
             }
         }
 
-        float[] heightmap = new float[modelOutputWidth * upSampleFactor * modelOutputHeight * upSampleFactor];
+        int[] heightmapDimensions = CalculateUpSampledDimensions();
+        float[] heightmap = new float[heightmapDimensions[0] * heightmapDimensions[1]];
         using(var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel))
         {
             Tensor input = tensorMathHelper.RandomNormalTensor(
                 1, modelOutputWidth, modelOutputHeight, channels
             );
             Tensor reverseDiffusionOutput = ReverseDiffusion(worker, input, 20);
-            if(upSampleFactor > 1)
+            
+            if(upSampleResolution != UpSampleResolution._256)
             {
-                Tensor upSampledOutput = BicubicUpSample(reverseDiffusionOutput, 2);
-                heightmap = upSampledOutput.ToReadOnlyArray();
-                upSampledOutput.Dispose();
+                int upSampleFactor = (int)upSampleResolution;
+                heightmap = BicubicUpSample(reverseDiffusionOutput, upSampleFactor);
             }
             else
             {
@@ -274,6 +302,8 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         Tensor verticalMirror = tensorMathHelper.MirrorTensor(heightmapTensor, true, false);
         Tensor bothMirror = tensorMathHelper.MirrorTensor(heightmapTensor, true, true);
 
+        Debug.Log("Mirror Width: " + horizontalMirror.width);
+
         Tensor gradient = new Tensor(1, 256 * 3, 256 * 3, 1);
         Vector2 center = new Vector2(radius1 + radius2, radius1 + radius2);
         for(int x = 0; x < 256 * 3; x++)
@@ -400,57 +430,28 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         terrain.terrainData.SetHeights(0, 0, newHeightmap);
     }
 
-    private Tensor BicubicUpSample(Tensor original, int factor)
+    private float[] SampleCubic(int num_samples, float p0, float p1, float p2, float p3)
     {
-        Tensor upSampled = new Tensor(1, original.width * factor, original.height * factor, 1);
-        Debug.Log("New Width: " + upSampled.width);
-        for(int x = 1; x < original.width - 2; x++)
-        {
-            for(int y = 0; y < upSampled.height; y++)
-            {
-                // f(x) = ax^3 + bx^2 + cx + d
-                // f(0) = d = p1
-                // f(1) = a + b + c + d = p2
-                // f'(x) = 3ax^2 + 2bx + c
-                // f'(0) = c = p0 - p1 = tangentStart
-                // f'(1) = 3a + 2b + c = p2 - p1 = tangentEnd
-                // a + b = p2 - p1 - tangentStart
-                // 3a + 2b = tangentEnd - tangentStart
-                // (3a + 2b) - 2(a + b) = (tangentEnd - tangentStart) - 2(p2 - p1 - tangentStart)
-                // a = (tangentEnd - tangentStart) - 2(p2 - p1 - tangentStart)
-                // b = p2 - p1 - tangentStart - a
+        // f(x) = ax^3 + bx^2 + cx + d
+        // f(0) = d = p1
+        // f(1) = a + b + c + d = p2
+        // f'(x) = 3ax^2 + 2bx + c
+        // f'(0) = c = p0 - p1 = tangentStart
+        // f'(1) = 3a + 2b + c = p2 - p1 = tangentEnd
+        // a + b = p2 - p1 - tangentStart
+        // 3a + 2b = tangentEnd - tangentStart
+        // (3a + 2b) - 2(a + b) = (tangentEnd - tangentStart) - 2(p2 - p1 - tangentStart)
+        // a = (tangentEnd - tangentStart) - 2(p2 - p1 - tangentStart)
+        // b = p2 - p1 - tangentStart - a
 
-                int remappedY = y / factor;
-                float p0 = original[0, remappedY, x - 1, 0];
-                float p1 = original[0, remappedY, x, 0];
-                float p2 = original[0, remappedY, x + 1, 0];
-                float p3 = original[0, remappedY, x + 2, 0];
+        float tangentStart = p0 - p1;
+        float tangentEnd = p2 - p3;
 
-                float tangentStart = p0 - p1;
-                float tangentEnd = p2 - p3;
+        float a = (tangentEnd - tangentStart) - 2 * (p2 - p1 - tangentStart);
+        float b = p2 - p1 - tangentStart - a;
+        float c = tangentStart;
+        float d = p1;
 
-                float a = (tangentEnd - tangentStart) - 2 * (p2 - p1 - tangentStart);
-                float b = p2 - p1 - tangentStart - a;
-                float c = tangentStart;
-                float d = p1;
-
-                // 0 (1) 2 (3) 4 (5) 6 (7) 8 (9) 10 factor = 2
-                // 0 (1, 2) 3 (4, 5) 6 (7, 8) 9 (10, 11) 12 factor = 3
-
-                float[] samples = SampleCubic(factor - 1, a, b, c, d);
-                for(int i = 0; i < factor - 1; i++)
-                {
-                    upSampled[0, y, x * factor + i + 1, 0] = samples[i];
-                }
-                upSampled [0, y, x * factor, 0] = p1;
-            }
-        }
-        Debug.Log("Successfuly upsampled");
-        return upSampled;
-    }
-
-    private float[] SampleCubic(int num_samples, float a, float b, float c, float d)
-    {
         float[] samples = new float[num_samples];
         for(int i = 0; i < num_samples; i++)
         {
@@ -458,5 +459,59 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
             samples[i] = a * Mathf.Pow(x, 3) + b * Mathf.Pow(x, 2) + c * x + d;
         }
         return samples;
+    }
+
+    private float[] BicubicUpSample(Tensor original, int factor)
+    {
+        Tensor upSampledWidth = new Tensor(1, original.height, original.width * factor, 1);
+        Tensor upSampled = new Tensor(1, original.height * factor, original.width * factor, 1);
+
+        float p0 = 0;
+        float p1 = 0;
+        float p2 = 0;
+        float p3 = 0;
+
+        // Up sample width.
+        for(int x = 1; x < original.width - 2; x++)
+        {
+            for(int y = 0; y < original.height; y++)
+            {
+                p0 = original[0, y, x - 1, 0];
+                p1 = original[0, y, x, 0];
+                p2 = original[0, y, x + 1, 0];
+                p3 = original[0, y, x + 2, 0];
+
+                float[] samples = SampleCubic(factor, p0, p1, p2, p3);
+                for(int i = 0; i < factor - 1; i++)
+                {
+                    upSampledWidth[0, y, x * factor + i + 1, 0] = samples[i];
+                }
+                upSampledWidth [0, y, x * factor, 0] = p1;
+            }
+        }
+
+        // Up sample height.
+        for(int x = 0; x < upSampledWidth.width; x++)
+        {
+            for(int y = 1; y < original.height - 2; y++)
+            {
+                p0 = upSampledWidth[0, y - 1, x, 0];
+                p1 = upSampledWidth[0, y, x, 0];
+                p2 = upSampledWidth[0, y + 1, x, 0];
+                p3 = upSampledWidth[0, y + 2, x, 0];
+
+                float[] samples = SampleCubic(factor, p0, p1, p2, p3);
+                for(int i = 0; i < factor - 1; i++)
+                {
+                    upSampled[0, y * factor + i + 1, x, 0] = samples[i];
+                }
+                upSampled[0, y * factor, x, 0] = p1;
+            }
+        }
+
+        float[] upSampledArray = upSampled.ToReadOnlyArray();
+        upSampledWidth.Dispose();
+        upSampled.Dispose();
+        return upSampledArray;
     }
 }
