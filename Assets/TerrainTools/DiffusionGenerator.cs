@@ -78,7 +78,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
             }
             editContext.ShowBrushesGUI(5, BrushGUIEditFlags.Select);
             m_BrushOpacity = EditorGUILayout.Slider("Opacity", m_BrushOpacity, 0, 1);
-            m_BrushSize = EditorGUILayout.Slider("Size", m_BrushSize, .001f, 1000f);
+            m_BrushSize = EditorGUILayout.Slider("Size", m_BrushSize, .001f, 2000f);
             m_BrushRotation = EditorGUILayout.Slider("Rotation", m_BrushRotation, 0, 360);
             if(GUILayout.Button("Generate Brush Heighmap"))
             {
@@ -101,12 +101,11 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
         upSampleMode = (UpSampleMode)EditorGUILayout.EnumPopup("UpSample Mode", upSampleMode);
         upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup("UpSample Resolution", upSampleResolution);
-        radius1 = EditorGUILayout.FloatField("Radius 1", radius1);
-        radius2 = EditorGUILayout.FloatField("Radius 2", radius2);
+        CalculateUpSampledDimensions();
+        CalculateBlendingRadii();
 
         if(GUILayout.Button("Generate Terrain From Scratch"))
         {
-            CalculateUpSampledDimensions();
             float[] heightmap = GenerateHeightmap();
             SetTerrainHeights(terrain, heightmap, upSampledWidth, upSampledHeight);
         }
@@ -138,11 +137,14 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
     // Render Tool previews in the SceneView
     public override void OnRenderBrushPreview(Terrain terrain, IOnSceneGUI editContext)
     {
+        // Don't do anything if brushes are disabled.
+        if(!brushesEnabled) { return; }
+
         // Dont render preview if this isnt a Repaint
-        if (Event.current.type != EventType.Repaint) return;
+        if(Event.current.type != EventType.Repaint) { return; }
 
         // Only do the rest if user mouse hits valid terrain
-        if (!editContext.hitValidTerrain) return;
+        if(!editContext.hitValidTerrain) { return; }
 
         // Get the current BrushTransform under the mouse position relative to the Terrain
         BrushTransform brushXform = TerrainPaintUtility.CalculateBrushTransform(terrain, editContext.raycastHit.textureCoord, m_BrushSize, m_BrushRotation);
@@ -167,22 +169,20 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
     // Perform painting operations that modify the Terrain texture data
     public override bool OnPaint(Terrain terrain, IOnPaint editContext)
     {
-        if(brushesEnabled)
-        {
-            // Get the current BrushTransform under the mouse position relative to the Terrain
-            BrushTransform brushXform = TerrainPaintUtility.CalculateBrushTransform(terrain, editContext.uv, m_BrushSize, m_BrushRotation);
-            // Get the PaintContext for the current BrushTransform. This has a sourceRenderTexture from which to read existing Terrain texture data
-            // and a destinationRenderTexture into which to write new Terrain texture data
-            PaintContext paintContext = TerrainPaintUtility.BeginPaintHeightmap(terrain, brushXform.GetBrushXYBounds());
-            // Call the common rendering function used by OnRenderBrushPreview and OnPaint
-            RenderIntoPaintContext(paintContext, brushTexture1, brushXform);
-            // Commit the modified PaintContext with a provided string for tracking Undo operations. This function handles Undo and resource cleanup for you
-            TerrainPaintUtility.EndPaintHeightmap(paintContext, "Terrain Paint - Raise or Lower Height");
+        if(!brushesEnabled) { return false; }
 
-            // Return whether or not Trees and Details should be hidden while painting with this Terrain Tool
-            return true;
-        }
-        return false;
+        // Get the current BrushTransform under the mouse position relative to the Terrain
+        BrushTransform brushXform = TerrainPaintUtility.CalculateBrushTransform(terrain, editContext.uv, m_BrushSize, m_BrushRotation);
+        // Get the PaintContext for the current BrushTransform. This has a sourceRenderTexture from which to read existing Terrain texture data
+        // and a destinationRenderTexture into which to write new Terrain texture data
+        PaintContext paintContext = TerrainPaintUtility.BeginPaintHeightmap(terrain, brushXform.GetBrushXYBounds());
+        // Call the common rendering function used by OnRenderBrushPreview and OnPaint
+        RenderIntoPaintContext(paintContext, brushTexture1, brushXform);
+        // Commit the modified PaintContext with a provided string for tracking Undo operations. This function handles Undo and resource cleanup for you
+        TerrainPaintUtility.EndPaintHeightmap(paintContext, "Terrain Paint - Raise or Lower Height");
+
+        // Return whether or not Trees and Details should be hidden while painting with this Terrain Tool
+        return true;
     }
 
     private void CalculateUpSampledDimensions()
@@ -190,6 +190,12 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         int upSampleFactor = (int)upSampleResolution;
         upSampledWidth = modelOutputWidth * upSampleFactor;
         upSampledHeight = modelOutputHeight * upSampleFactor;
+    }
+
+    private void CalculateBlendingRadii()
+    {
+        radius1 = upSampledWidth / 2;
+        radius2 = upSampledWidth;
     }
 
     private float[] GenerateHeightmap()
