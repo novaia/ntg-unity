@@ -50,6 +50,9 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
     private float m_BrushOpacity = 0.1f;
     private float m_BrushSize = 25f;
     private float m_BrushRotation = 0f;
+    private Texture2D brushMask;
+    private Texture2D brushHeightmap;
+    private Texture2D brushHeightmapMasked;
 
     public override string GetName()
     {
@@ -61,39 +64,25 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         return "Diffusion based neural terrain generator.";
     }
 
+    private void GenerateMaskedBrushHeightmap()
+    {
+        if(brushHeightmap == null || brushMask == null) { return; }
+
+        brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
+        Color[] brushHeightmapColors = brushHeightmap.GetPixels();
+        Color[] brushMaskColors = brushMask.GetPixels();
+        Color[] brushHeightmapMaskedColors = new Color[brushHeightmapColors.Length];
+        for(int i = 0; i < brushHeightmapColors.Length; i++)
+        {
+            brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColors[i].r;
+        }
+        brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
+        brushHeightmapMasked.Apply();
+    }
+
     public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
     {
-        if(!brushesEnabled)
-        {
-            if(GUILayout.Button("Enable Brushes"))
-            {
-                brushesEnabled = true;
-            }
-        }
-        else
-        {
-            if(GUILayout.Button("Disable Brushes"))
-            {
-                brushesEnabled = false;
-            }
-            editContext.ShowBrushesGUI(5, BrushGUIEditFlags.Select);
-            m_BrushOpacity = EditorGUILayout.Slider("Opacity", m_BrushOpacity, 0, 1);
-            m_BrushSize = EditorGUILayout.Slider("Size", m_BrushSize, .001f, 2000f);
-            m_BrushRotation = EditorGUILayout.Slider("Rotation", m_BrushRotation, 0, 360);
-            if(GUILayout.Button("Generate Brush Heighmap"))
-            {
-                float[] brushHeightmap = GenerateHeightmap();
-                Color[] colorBrushHeightmap = new Color[brushHeightmap.Length];
-                for(int i = 0; i < brushHeightmap.Length; i++)
-                {
-                    colorBrushHeightmap[i] = new Color(brushHeightmap[i], brushHeightmap[i], brushHeightmap[i]);
-                }
-                brushTexture1 = new Texture2D(upSampledWidth, upSampledHeight);
-                brushTexture1.SetPixels(0, 0, upSampledWidth, upSampledHeight, colorBrushHeightmap);
-                brushTexture1.Apply();
-            }
-            GUILayout.Box(brushTexture1);
-        }
+        BrushGUI();
 
         modelAsset = (NNModel)EditorGUILayout.ObjectField("Model Asset", modelAsset, typeof(NNModel), false);
         modelOutputWidth = EditorGUILayout.IntField("Model Output Width", modelOutputWidth);
@@ -116,6 +105,56 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         if(GUILayout.Button("Blend With Neighbors"))
         {
             BlendAllNeighbors(terrain);
+        }
+    }
+
+    private void BrushGUI()
+    {
+        if(!brushesEnabled)
+        {
+            if(GUILayout.Button("Enable Brushes"))
+            {
+                brushesEnabled = true;
+            }
+        }
+        else
+        {
+            if(GUILayout.Button("Disable Brushes"))
+            {
+                brushesEnabled = false;
+            }
+
+            Texture2D tempBrushMask = (Texture2D)EditorGUILayout.ObjectField("Brush Mask Texture", brushMask, typeof(Texture2D), false);
+            if(tempBrushMask)
+            {
+                brushMask = tempBrushMask;
+                GenerateMaskedBrushHeightmap();
+            }
+
+            m_BrushOpacity = EditorGUILayout.Slider("Opacity", m_BrushOpacity, 0, 1);
+            m_BrushSize = EditorGUILayout.Slider("Size", m_BrushSize, .001f, 2000f);
+            m_BrushRotation = EditorGUILayout.Slider("Rotation", m_BrushRotation, 0, 360);
+
+            if(GUILayout.Button("Generate Brush Heighmap"))
+            {
+                float[] brushHeightmapArray = GenerateHeightmap();
+                Color[] colorBrushHeightmap = new Color[brushHeightmapArray.Length];
+                for(int i = 0; i < brushHeightmapArray.Length; i++)
+                {
+                    colorBrushHeightmap[i] = new Color(brushHeightmapArray[i], brushHeightmapArray[i], brushHeightmapArray[i]);
+                }
+                brushHeightmap = new Texture2D(upSampledWidth, upSampledHeight);
+                brushHeightmap.SetPixels(0, 0, upSampledWidth, upSampledHeight, colorBrushHeightmap);
+                brushHeightmap.Apply();
+            }
+            if(brushHeightmap != null)
+            {
+                GUILayout.Box(brushHeightmap);
+            }
+            if(brushHeightmapMasked != null)
+            {
+                GUILayout.Box(brushHeightmapMasked);
+            }
         }
     }
 
@@ -153,15 +192,15 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         // Get the built-in Material for rendering Brush Previews
         Material previewMaterial = TerrainPaintUtilityEditor.GetDefaultBrushPreviewMaterial();
         // Render the brush preview for the sourceRenderTexture. This will show up as a projected brush mesh rendered on top of the Terrain
-        TerrainPaintUtilityEditor.DrawBrushPreview(paintContext, TerrainBrushPreviewMode.SourceRenderTexture, brushTexture1, brushXform, previewMaterial, 0);
+        TerrainPaintUtilityEditor.DrawBrushPreview(paintContext, TerrainBrushPreviewMode.SourceRenderTexture, brushHeightmapMasked, brushXform, previewMaterial, 0);
         // Render changes into the PaintContext destinationRenderTexture
-        RenderIntoPaintContext(paintContext, brushTexture1, brushXform);
+        RenderIntoPaintContext(paintContext, brushHeightmapMasked, brushXform);
         // Restore old render target.
         RenderTexture.active = paintContext.oldRenderTexture;
         // Bind the sourceRenderTexture to the preview Material. This is used to compute deltas in height
         previewMaterial.SetTexture("_HeightmapOrig", paintContext.sourceRenderTexture);
         // Render a procedural mesh displaying the delta/displacement in height from the source Terrain texture data. When modifying Terrain height, this shows how much the next paint operation will alter the Terrain height
-        TerrainPaintUtilityEditor.DrawBrushPreview(paintContext, TerrainBrushPreviewMode.DestinationRenderTexture, brushTexture1, brushXform, previewMaterial, 1);
+        TerrainPaintUtilityEditor.DrawBrushPreview(paintContext, TerrainBrushPreviewMode.DestinationRenderTexture, brushHeightmapMasked, brushXform, previewMaterial, 1);
         // Cleanup resources
         TerrainPaintUtility.ReleaseContextResources(paintContext);
     }
@@ -177,7 +216,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         // and a destinationRenderTexture into which to write new Terrain texture data
         PaintContext paintContext = TerrainPaintUtility.BeginPaintHeightmap(terrain, brushXform.GetBrushXYBounds());
         // Call the common rendering function used by OnRenderBrushPreview and OnPaint
-        RenderIntoPaintContext(paintContext, brushTexture1, brushXform);
+        RenderIntoPaintContext(paintContext, brushHeightmapMasked, brushXform);
         // Commit the modified PaintContext with a provided string for tracking Undo operations. This function handles Undo and resource cleanup for you
         TerrainPaintUtility.EndPaintHeightmap(paintContext, "Terrain Paint - Raise or Lower Height");
 
