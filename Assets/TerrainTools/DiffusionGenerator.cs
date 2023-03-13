@@ -73,24 +73,33 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         if(brushHeightmap == null || brushMask == null) { return; }
 
         brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
+
+        // Convert textures to color arrays so they can be processed.
         Color[] brushHeightmapColors = brushHeightmap.GetPixels();
         Color[] brushMaskColors = brushMask.GetPixels();
+
+        // Create color array to store scaled values before they're converted into a texture.
         Color[] brushHeightmapMaskedColors = new Color[brushHeightmapColors.Length];
+        
+        // Populate brushHeightmapMaskedColors with scaled brushHeightmapColors.
         for(int i = 0; i < brushHeightmapColors.Length; i++)
         {
             brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColors[i].r;
         }
+
+        // Convert color array to texture for painting.
         brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
         brushHeightmapMasked.Apply();
     }
 
     public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
     {
-        BrushGUI();
-
         modelAsset = (NNModel)EditorGUILayout.ObjectField("Model Asset", modelAsset, typeof(NNModel), false);
-        modelOutputWidth = EditorGUILayout.IntField("Model Output Width", modelOutputWidth);
-        modelOutputHeight = EditorGUILayout.IntField("Model Output Height", modelOutputHeight);
+
+        EditorGUILayout.Space();
+        BrushGUI();
+        EditorGUILayout.Space();
+
         heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
         upSampleMode = (UpSampleMode)EditorGUILayout.EnumPopup("UpSample Mode", upSampleMode);
         upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup("UpSample Resolution", upSampleResolution);
@@ -99,25 +108,13 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
 
         if(GUILayout.Button("Generate Terrain From Scratch"))
         {
-            float[] heightmap = GenerateHeightmap();
+            float[] heightmap = GenerateHeightmap(upSampleResolution);
             terrainHelper.SetTerrainHeights(terrain, heightmap, upSampledWidth, upSampledHeight, heightMultiplier);
         }
 
-        bValue = EditorGUILayout.FloatField("B Value", bValue);
-        keepNeighborHeights = EditorGUILayout.Toggle("Keep Neighbor Heights", keepNeighborHeights);
+        EditorGUILayout.Space();
 
-        if(GUILayout.Button("Blend With Neighbors"))
-        {
-            neighborBlender.BlendAllNeighbors(
-                terrain, 
-                upSampledWidth, 
-                upSampledHeight, 
-                radius1, 
-                radius2, 
-                bValue, 
-                keepNeighborHeights
-            );
-        }
+        BlendGUI(terrain);
     }
 
     private void BrushGUI()
@@ -136,12 +133,16 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 brushesEnabled = false;
             }
 
+            EditorGUILayout.HelpBox("Brush masks must be 256x256.", MessageType.Info);
             Texture2D tempBrushMask = (Texture2D)EditorGUILayout.ObjectField("Brush Mask", brushMask, typeof(Texture2D), false);
             if(tempBrushMask)
             {
                 brushMask = tempBrushMask;
+                // Generate masked brush heightmap if a new brush mask is selected.
                 GenerateMaskedBrushHeightmap();
             }
+
+            EditorGUILayout.Space();
 
             m_BrushOpacity = EditorGUILayout.Slider("Opacity", m_BrushOpacity, 0, 1);
             m_BrushSize = EditorGUILayout.Slider("Size", m_BrushSize, .001f, 2000f);
@@ -149,16 +150,24 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
 
             if(GUILayout.Button("Generate Brush Heighmap"))
             {
-                float[] brushHeightmapArray = GenerateHeightmap();
+                // Brush heightmap is not upsampled, so keep it at 256x256.
+                float[] brushHeightmapArray = GenerateHeightmap(UpSampleResolution._256);
+
+                // Convert float array to color array.
                 Color[] colorBrushHeightmap = new Color[brushHeightmapArray.Length];
                 for(int i = 0; i < brushHeightmapArray.Length; i++)
                 {
                     colorBrushHeightmap[i] = new Color(brushHeightmapArray[i], brushHeightmapArray[i], brushHeightmapArray[i]);
                 }
-                brushHeightmap = new Texture2D(upSampledWidth, upSampledHeight);
-                brushHeightmap.SetPixels(0, 0, upSampledWidth, upSampledHeight, colorBrushHeightmap);
+
+                // Convert color array to texture for painting.
+                // Dimensions equal to model output dimensions because there is no upsampling.
+                brushHeightmap = new Texture2D(modelOutputWidth, modelOutputHeight);
+                brushHeightmap.SetPixels(0, 0, modelOutputWidth, modelOutputHeight, colorBrushHeightmap);
                 brushHeightmap.Apply();
             }
+
+            // Display brush heightmap and masked heightmap if they exist.
             if(brushHeightmap != null)
             {
                 GUILayout.Box(brushHeightmap);
@@ -168,6 +177,25 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 GUILayout.Box(brushHeightmapMasked);
             }
         }
+    }
+
+    private void BlendGUI(Terrain terrain)
+    {
+        bValue = EditorGUILayout.FloatField("B Value", bValue);
+        keepNeighborHeights = EditorGUILayout.Toggle("Keep Neighbor Heights", keepNeighborHeights);
+
+        if(GUILayout.Button("Blend With Neighbors"))
+        {
+            neighborBlender.BlendAllNeighbors(
+                terrain, 
+                upSampledWidth, 
+                upSampledHeight, 
+                radius1, 
+                radius2, 
+                bValue, 
+                keepNeighborHeights
+            );
+        } 
     }
 
     private void RenderIntoPaintContext(PaintContext paintContext, Texture brushTexture, BrushTransform brushXform)
@@ -249,7 +277,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
         radius2 = upSampledWidth;
     }
 
-    private float[] GenerateHeightmap()
+    private float[] GenerateHeightmap(UpSampleResolution upSampleResolutionArg)
     {
         if(runtimeModel == null)
         {
@@ -278,7 +306,7 @@ public class DiffusionGenerator : TerrainPaintTool<DiffusionGenerator>
                 modelOutputHeight
             );
             
-            if(upSampleResolution != UpSampleResolution._256)
+            if(upSampleResolutionArg != UpSampleResolution._256)
             {
                 int upSampleFactor = (int)upSampleResolution;
                 heightmap = bicubicUpSampler.BicubicUpSample(reverseDiffusionOutput, upSampleFactor);
