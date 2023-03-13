@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Barracuda;
 
-public class NeighborBlender : MonoBehaviour
+public class NeighborBlender
 {
     private TensorMathHelper tensorMathHelper = new TensorMathHelper();
     private TerrainHelper terrainHelper = new TerrainHelper();
