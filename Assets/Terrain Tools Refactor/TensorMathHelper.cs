@@ -97,10 +97,6 @@ public class TensorMathHelper
                 }
             }
         }
-        /*for(int i = 0; i < leftTensor.length; i++)
-        {
-            newTensor[i] = leftTensor[i] - rightTensor[i];
-        }*/
         return newTensor;
     }
 
