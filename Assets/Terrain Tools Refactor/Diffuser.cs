@@ -120,7 +120,6 @@ public class Diffuser
             nextNoisyImages = tensorMathHelper.AddTensor(scaledPredictedImages, 
                                                          scaledPredictedNoises2);
             
-            // Dispose of tensors.
             scaledPredictedImages.Dispose();
             scaledPredictedNoises2.Dispose();
             nextNoiseRates.Dispose();
@@ -132,7 +131,6 @@ public class Diffuser
             noisyImages.Dispose();
         }
 
-        // Dispose of tensors.
         initialNoise.Dispose();
         nextNoisyImages.Dispose();
 

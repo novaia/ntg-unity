@@ -46,7 +46,7 @@ public class BicbubicUpSampler
         float p2 = 0;
         float p3 = 0;
 
-        // Up sample width.
+        // Upsample width.
         for(int x = 0; x < original.width; x++)
         {
             for(int y = 0; y < original.height; y++)
@@ -87,7 +87,7 @@ public class BicbubicUpSampler
             }
         }
 
-        // Up sample height.
+        // Upsample height.
         for(int x = 0; x < upSampledX.width; x++)
         {
             for(int y = 0; y < original.height; y++)
