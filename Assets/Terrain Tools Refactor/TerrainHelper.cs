@@ -1,52 +1,56 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using NeuralTerrainGeneration;
 
-public class TerrainHelper
+namespace NeuralTerrainGeneration
 {
-    public void SetTerrainHeights(
-        Terrain terrain, 
-        float[] heightmap, 
-        int width, 
-        int height, 
-        float heightMultiplier, 
-        bool scale = true
-    )
+    public class TerrainHelper
     {
-        terrain.terrainData.heightmapResolution = width;
-
-        float scaleCoefficient = 1;
-        if(scale)
+        public void SetTerrainHeights(
+            Terrain terrain, 
+            float[] heightmap, 
+            int width, 
+            int height, 
+            float heightMultiplier, 
+            bool scale = true
+        )
         {
-            float maxValue = heightmap[0];
-            for(int i = 0; i < heightmap.Length; i++)
+            terrain.terrainData.heightmapResolution = width;
+
+            float scaleCoefficient = 1;
+            if(scale)
             {
-                if(heightmap[i] > maxValue)
+                float maxValue = heightmap[0];
+                for(int i = 0; i < heightmap.Length; i++)
                 {
-                    maxValue = heightmap[i];
+                    if(heightmap[i] > maxValue)
+                    {
+                        maxValue = heightmap[i];
+                    }
+                }
+                scaleCoefficient = (1 / maxValue) * heightMultiplier;
+            }
+
+            float[,] newHeightmap = new float[width+1, height+1];
+            for(int x = 0; x < width; x++)
+            {
+                for(int y = 0; y < height; y++)
+                {
+                    newHeightmap[x, y] = heightmap[x + y * width] * scaleCoefficient;
                 }
             }
-            scaleCoefficient = (1 / maxValue) * heightMultiplier;
-        }
 
-        float[,] newHeightmap = new float[width+1, height+1];
-        for(int x = 0; x < width; x++)
-        {
-            for(int y = 0; y < height; y++)
+            for(int i = 0; i < width+1; i++)
             {
-                newHeightmap[x, y] = heightmap[x + y * width] * scaleCoefficient;
+                newHeightmap[i, height] = newHeightmap[i, height-1];
             }
-        }
+            for(int i = 0; i < height+1; i++)
+            {
+                newHeightmap[width, i] = newHeightmap[width-1, i];
+            }
 
-        for(int i = 0; i < width+1; i++)
-        {
-            newHeightmap[i, height] = newHeightmap[i, height-1];
+            terrain.terrainData.SetHeights(0, 0, newHeightmap);
         }
-        for(int i = 0; i < height+1; i++)
-        {
-            newHeightmap[width, i] = newHeightmap[width-1, i];
-        }
-
-        terrain.terrainData.SetHeights(0, 0, newHeightmap);
     }
 }
