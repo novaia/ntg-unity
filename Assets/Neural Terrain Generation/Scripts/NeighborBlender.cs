@@ -74,6 +74,100 @@ namespace NeuralTerrainGeneration
             scaledMirror.Dispose();
         }
 
+        public void ClampToSingleNeighbor(
+            float[,] heightmap, 
+            Terrain neighbor, 
+            int ownOffset,
+            int neighborOffset,
+            bool isHorizontalNeighbor,
+            int terrainWidth,
+            int terrainHeight
+        )
+        {
+            if(neighbor != null)
+            {
+                float[,] neighborHeightmap = neighbor.terrainData.GetHeights(
+                    0, 0, terrainWidth + 1, terrainHeight + 1
+                );
+
+                if(isHorizontalNeighbor)
+                {
+                    // If isHorizontalNeighbor, clamp along the y axis.
+                    for(int i = 0; i < terrainHeight; i++)
+                    {
+                        heightmap[i, ownOffset] = neighborHeightmap[i, neighborOffset];
+                    }
+                }
+                else
+                {
+                    // if !isHorizontalNeighbor, clamp along the x axis.
+                    for(int i = 0; i < terrainWidth; i++)
+                    {
+                        heightmap[ownOffset, i] = neighborHeightmap[neighborOffset, i];
+                    }
+                }
+            }
+        }
+
+        public void ClampToNeighbors(
+            Terrain terrain, 
+            Terrain leftNeighbor, 
+            Terrain rightNeighbor, 
+            Terrain topNeighbor, 
+            Terrain bottomNeighbor, 
+            int terrainWidth, 
+            int terrainHeight
+        )
+        {
+            float[,] heightmap = terrain.terrainData.GetHeights(0, 0, terrainWidth, terrainWidth);
+
+            // Clamp to left neighbor.
+            ClampToSingleNeighbor(
+                heightmap, 
+                leftNeighbor, 
+                0, 
+                terrainWidth, 
+                true, 
+                terrainWidth, 
+                terrainHeight
+            );
+
+            // Clamp to right neighbor.
+            ClampToSingleNeighbor(
+                heightmap, 
+                rightNeighbor, 
+                terrainWidth, 
+                0, 
+                true, 
+                terrainWidth, 
+                terrainHeight
+            );
+
+            // Clamp to top neighbor.
+            ClampToSingleNeighbor(
+                heightmap, 
+                topNeighbor, 
+                0, 
+                terrainHeight, 
+                false, 
+                terrainWidth, 
+                terrainHeight
+            );
+
+            // Clamp to bottom neighbor.
+            ClampToSingleNeighbor(
+                heightmap, 
+                bottomNeighbor, 
+                terrainHeight, 
+                0, 
+                false, 
+                terrainWidth, 
+                terrainHeight
+            );
+
+            terrain.terrainData.SetHeights(0, 0, heightmap);
+        }
+
         public void BlendAllNeighbors(
             Terrain terrain, 
             int terrainWidth, 
@@ -201,6 +295,16 @@ namespace NeuralTerrainGeneration
                     terrainHeight,
                     keepNeighborHeights
                 );
+
+                ClampToNeighbors(
+                    topLeftNeighbor,
+                    null,
+                    topNeighbor,
+                    null,
+                    leftNeighbor,
+                    terrainWidth,
+                    terrainHeight
+                );
             }
 
             if(bottomLeftNeighbor != null)
@@ -214,6 +318,16 @@ namespace NeuralTerrainGeneration
                     terrainWidth, 
                     terrainHeight,
                     keepNeighborHeights
+                );
+
+                ClampToNeighbors(
+                    bottomLeftNeighbor,
+                    null,
+                    bottomNeighbor,
+                    leftNeighbor,
+                    null,
+                    terrainWidth,
+                    terrainHeight
                 );
             }
 
@@ -229,6 +343,16 @@ namespace NeuralTerrainGeneration
                     terrainHeight,
                     keepNeighborHeights
                 );
+
+                ClampToNeighbors(
+                    topRightNeighbor,
+                    topNeighbor,
+                    null,
+                    null,
+                    rightNeighbor,
+                    terrainWidth,
+                    terrainHeight
+                );
             }
 
             if(bottomRightNeighbor != null)
@@ -242,6 +366,16 @@ namespace NeuralTerrainGeneration
                     terrainWidth, 
                     terrainHeight,
                     keepNeighborHeights
+                );
+
+                ClampToNeighbors(
+                    bottomRightNeighbor,
+                    bottomNeighbor,
+                    null,
+                    rightNeighbor,
+                    null,
+                    terrainWidth,
+                    terrainHeight
                 );
             }
         }
