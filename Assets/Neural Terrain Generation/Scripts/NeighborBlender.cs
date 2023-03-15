@@ -75,6 +75,7 @@ namespace NeuralTerrainGeneration
         }
 
         public void ClampToSingleNeighbor(
+            Terrain terrain,
             float[,] heightmap, 
             Terrain neighbor, 
             int ownOffset,
@@ -87,7 +88,7 @@ namespace NeuralTerrainGeneration
             if(neighbor != null)
             {
                 float[,] neighborHeightmap = neighbor.terrainData.GetHeights(
-                    0, 0, terrainWidth + 1, terrainHeight + 1
+                    0, 0, terrainWidth, terrainHeight
                 );
 
                 if(isHorizontalNeighbor)
@@ -107,6 +108,17 @@ namespace NeuralTerrainGeneration
                     }
                 }
             }
+
+            Tensor heightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
+            terrainHelper.SetTerrainHeights(
+                terrain, 
+                heightmapTensor.ToReadOnlyArray(), 
+                terrainWidth, 
+                terrainHeight, 
+                1, 
+                false
+            );
+            heightmapTensor.Dispose();
         }
 
         public void ClampToNeighbors(
@@ -123,10 +135,11 @@ namespace NeuralTerrainGeneration
 
             // Clamp to left neighbor.
             ClampToSingleNeighbor(
+                terrain,
                 heightmap, 
                 leftNeighbor, 
                 0, 
-                terrainWidth, 
+                terrainWidth - 1, 
                 true, 
                 terrainWidth, 
                 terrainHeight
@@ -134,9 +147,10 @@ namespace NeuralTerrainGeneration
 
             // Clamp to right neighbor.
             ClampToSingleNeighbor(
+                terrain,
                 heightmap, 
                 rightNeighbor, 
-                terrainWidth, 
+                terrainWidth - 1, 
                 0, 
                 true, 
                 terrainWidth, 
@@ -145,10 +159,11 @@ namespace NeuralTerrainGeneration
 
             // Clamp to top neighbor.
             ClampToSingleNeighbor(
+                terrain,
                 heightmap, 
                 topNeighbor, 
+                terrainHeight - 1, 
                 0, 
-                terrainHeight, 
                 false, 
                 terrainWidth, 
                 terrainHeight
@@ -156,10 +171,11 @@ namespace NeuralTerrainGeneration
 
             // Clamp to bottom neighbor.
             ClampToSingleNeighbor(
+                terrain,
                 heightmap, 
                 bottomNeighbor, 
-                terrainHeight, 
                 0, 
+                terrainHeight - 1, 
                 false, 
                 terrainWidth, 
                 terrainHeight

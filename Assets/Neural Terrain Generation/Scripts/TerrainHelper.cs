@@ -41,6 +41,7 @@ namespace NeuralTerrainGeneration
                 }
             }
 
+            // This is to prevent falloff artifacts at the edge of the terrain.
             for(int i = 0; i < width+1; i++)
             {
                 newHeightmap[i, height] = newHeightmap[i, height-1];
