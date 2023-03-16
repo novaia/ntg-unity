@@ -27,7 +27,7 @@ namespace NeuralTerrainGeneration
         private float radius1 = 128.0f;
         private float radius2 = 256.0f;
         private float bValue = 2.5f;
-        private bool keepNeighborHeights;
+        private bool keepNeighborHeights = false;
         private NeighborBlender neighborBlender = new NeighborBlender();
         
         // Diffusion.
@@ -178,8 +178,7 @@ namespace NeuralTerrainGeneration
         private void BlendGUI(Terrain terrain)
         {
             bValue = EditorGUILayout.Slider("Blending Slope Start Value", bValue, 2.5f, 5.0f);
-            //bValue = EditorGUILayout.FloatField("Blending Slope Start Value", bValue);
-            keepNeighborHeights = EditorGUILayout.Toggle("Keep Neighbor Heights", keepNeighborHeights);
+            //keepNeighborHeights = EditorGUILayout.Toggle("Keep Neighbor Heights", keepNeighborHeights);
 
             if(GUILayout.Button("Blend With Neighbors"))
             {
