@@ -18,7 +18,7 @@ namespace NeuralTerrainGeneration
         private int modelOutputHeight = 256;
         private int upSampledWidth = 0;
         private int upSampledHeight = 0;
-        private float heightMultiplier = 0.3f;
+        private float heightMultiplier = 0.5f;
         private int channels = 1;
         private NNModel modelAsset;
         private Model runtimeModel;
@@ -177,7 +177,8 @@ namespace NeuralTerrainGeneration
 
         private void BlendGUI(Terrain terrain)
         {
-            bValue = EditorGUILayout.FloatField("B Value", bValue);
+            bValue = EditorGUILayout.Slider("Blending Slope Start Value", bValue, 2.5f, 5.0f);
+            //bValue = EditorGUILayout.FloatField("Blending Slope Start Value", bValue);
             keepNeighborHeights = EditorGUILayout.Toggle("Keep Neighbor Heights", keepNeighborHeights);
 
             if(GUILayout.Button("Blend With Neighbors"))
@@ -267,7 +268,8 @@ namespace NeuralTerrainGeneration
             // Bind the sourceRenderTexture to the preview Material. This is used to compute deltas in height
             previewMaterial.SetTexture("_HeightmapOrig", paintContext.sourceRenderTexture);
 
-            // Render a procedural mesh displaying the delta/displacement in height from the source Terrain texture data. When modifying Terrain height, this shows how much the next paint operation will alter the Terrain height
+            // Render a procedural mesh displaying the delta/displacement in height from the source Terrain texture data. 
+            // When modifying Terrain height, this shows how much the next paint operation will alter the Terrain height.
             TerrainPaintUtilityEditor.DrawBrushPreview(
                 paintContext, 
                 TerrainBrushPreviewMode.DestinationRenderTexture, 
@@ -281,19 +283,32 @@ namespace NeuralTerrainGeneration
             TerrainPaintUtility.ReleaseContextResources(paintContext);
         }
 
-        // Perform painting operations that modify the Terrain texture data
+        // Perform painting operations that modify the Terrain texture data.
         public override bool OnPaint(Terrain terrain, IOnPaint editContext)
         {
             if(!brushesEnabled) { return false; }
 
             // Get the current BrushTransform under the mouse position relative to the Terrain
-            BrushTransform brushXform = TerrainPaintUtility.CalculateBrushTransform(terrain, editContext.uv, brushSize, brushRotation);
-            // Get the PaintContext for the current BrushTransform. This has a sourceRenderTexture from which to read existing Terrain texture data
+            BrushTransform brushXform = TerrainPaintUtility.CalculateBrushTransform(
+                terrain, 
+                editContext.uv, 
+                brushSize, 
+                brushRotation
+            );
+
+            // Get the PaintContext for the current BrushTransform. 
+            // This has a sourceRenderTexture from which to read existing Terrain texture data
             // and a destinationRenderTexture into which to write new Terrain texture data
-            PaintContext paintContext = TerrainPaintUtility.BeginPaintHeightmap(terrain, brushXform.GetBrushXYBounds());
+            PaintContext paintContext = TerrainPaintUtility.BeginPaintHeightmap(
+                terrain, 
+                brushXform.GetBrushXYBounds()
+            );
+
             // Call the common rendering function used by OnRenderBrushPreview and OnPaint
             RenderIntoPaintContext(paintContext, brushHeightmapMasked, brushXform);
-            // Commit the modified PaintContext with a provided string for tracking Undo operations. This function handles Undo and resource cleanup for you
+
+            // Commit the modified PaintContext with a provided string for tracking Undo operations. 
+            // This function handles Undo and resource cleanup for you.
             TerrainPaintUtility.EndPaintHeightmap(paintContext, "Terrain Paint - Raise or Lower Height");
 
             // Return whether or not Trees and Details should be hidden while painting with this Terrain Tool
