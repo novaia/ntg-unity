@@ -119,14 +119,14 @@ namespace NeuralTerrainGeneration
         {
             if(!brushesEnabled)
             {
-                if(GUILayout.Button("Enable Brushes"))
+                if(GUILayout.Button("Enable Brush"))
                 {
                     brushesEnabled = true;
                 }
             }
             else
             {
-                if(GUILayout.Button("Disable Brushes"))
+                if(GUILayout.Button("Disable Brush"))
                 {
                     brushesEnabled = false;
                 }
@@ -166,10 +166,12 @@ namespace NeuralTerrainGeneration
                 // Display brush heightmap and masked heightmap if they exist.
                 if(brushHeightmap != null)
                 {
+                    EditorGUILayout.LabelField("Brush Heightmap:");
                     GUILayout.Box(brushHeightmap);
                 }
                 if(brushHeightmapMasked != null)
                 {
+                    EditorGUILayout.LabelField("Masked Brush Heightmap:");
                     GUILayout.Box(brushHeightmapMasked);
                 }
             }
@@ -177,7 +179,7 @@ namespace NeuralTerrainGeneration
 
         private void BlendGUI(Terrain terrain)
         {
-            bValue = EditorGUILayout.Slider("Blending Slope Start Value", bValue, 2.5f, 5.0f);
+            bValue = EditorGUILayout.Slider("Blend Function Start Value", bValue, 2.5f, 5.0f);
             //keepNeighborHeights = EditorGUILayout.Toggle("Keep Neighbor Heights", keepNeighborHeights);
 
             if(GUILayout.Button("Blend With Neighbors"))
