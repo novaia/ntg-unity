@@ -36,7 +36,7 @@ namespace NeuralTerrainGeneration
         private Diffuser diffuser = new Diffuser();
         private int fromScratchDiffusionSteps = 20;
         private int fromSelectedDiffusionSteps = 20;
-        private int fromSelectedStartingStep = 15;
+        private int fromSelectedStartingStep = 18;
         private float selectedTerrainWeight = 0.55f;
         private int brushHeightmapDiffusionSteps = 20;
 
@@ -54,6 +54,9 @@ namespace NeuralTerrainGeneration
         };
         private UpSampleResolution upSampleResolution = UpSampleResolution._512;
         private BicbubicUpSampler bicubicUpSampler = new BicbubicUpSampler();
+        
+        // Downsampling.
+        private DownSampler downSampler = new DownSampler();
 
         // Brushes.
         private bool brushesEnabled = false;
@@ -107,7 +110,7 @@ namespace NeuralTerrainGeneration
             FromScratchGUI(terrain);
             EditorGUILayout.Space();
             EditorGUILayout.Space();
-            FromSelectedGUI();
+            FromSelectedGUI(terrain);
             EditorGUILayout.Space();
             EditorGUILayout.Space();
             BlendGUI(terrain);
@@ -152,7 +155,7 @@ namespace NeuralTerrainGeneration
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
                     // Brush heightmap is not upsampled, so keep it at 256x256.
-                    float[] brushHeightmapArray = GenerateHeightmap(UpSampleResolution._256);
+                    float[] brushHeightmapArray = GenerateHeightmap(UpSampleResolution._256, brushHeightmapDiffusionSteps);
 
                     Color[] colorBrushHeightmap = new Color[brushHeightmapArray.Length];
                     for(int i = 0; i < brushHeightmapArray.Length; i++)
@@ -192,12 +195,12 @@ namespace NeuralTerrainGeneration
 
             if(GUILayout.Button("Generate Terrain From Scratch"))
             {
-                float[] heightmap = GenerateHeightmap(upSampleResolution);
+                float[] heightmap = GenerateHeightmap(upSampleResolution, fromScratchDiffusionSteps);
                 terrainHelper.SetTerrainHeights(terrain, heightmap, upSampledWidth, upSampledHeight, heightMultiplier);
             }
         }
 
-        private void FromSelectedGUI()
+        private void FromSelectedGUI(Terrain terrain)
         {
             fromSelectedDiffusionSteps = EditorGUILayout.IntField("From Selected Diffusion Steps", fromSelectedDiffusionSteps);
             fromSelectedStartingStep = EditorGUILayout.IntField("From Selected Starting Step", fromSelectedStartingStep);
@@ -205,7 +208,60 @@ namespace NeuralTerrainGeneration
 
             if(GUILayout.Button("Generate Terrain From Selected"))
             {
+                int terrainResolution = terrain.terrainData.heightmapResolution;
+                int downSampleFactor = 1;
+                bool validTerrainResolution = true;
+                switch(terrainResolution)
+                {
+                    case 257:
+                        downSampleFactor = 1;
+                        break;
+                    case 513:
+                        downSampleFactor = 2;
+                        break;
+                    case 1025:
+                        downSampleFactor = 4;
+                        break;
+                    case 2049:
+                        downSampleFactor = 8;
+                        break;
+                    case 4097:
+                        downSampleFactor = 16;
+                        break;
+                    default:
+                        Debug.LogError("Selected terrain resolution must be one of the following: 257, 513, 1025, 2049, or 4097.");
+                        validTerrainResolution = false;
+                        break;
+                }
 
+                if(validTerrainResolution)
+                {
+                    float[,] heightmapArray = terrain.terrainData.GetHeights(0, 0, terrainResolution, terrainResolution);
+                    Tensor heightmap = tensorMathHelper.TwoDimensionalArrayToTensor(heightmapArray);
+                    Tensor downSampledHeightmap = downSampler.DownSample(heightmap, downSampleFactor);
+                    Tensor scaledHeightmap = tensorMathHelper.ScaleTensor(downSampledHeightmap, selectedTerrainWeight);
+                    
+                    Tensor noise = tensorMathHelper.RandomNormalTensor(1, modelOutputHeight, modelOutputWidth, 1);
+                    Tensor scaledNoise = tensorMathHelper.ScaleTensor(noise, 1.0f - selectedTerrainWeight);
+
+                    Tensor customInput = tensorMathHelper.AddTensor(scaledHeightmap, scaledNoise);
+
+                    float[] newHeightmap = GenerateHeightmap(
+                        upSampleResolution, 
+                        fromSelectedDiffusionSteps, 
+                        fromSelectedStartingStep, 
+                        customInput
+                    );
+
+                    terrainHelper.SetTerrainHeights(terrain, newHeightmap, upSampledWidth, upSampledHeight, heightMultiplier);
+
+                    heightmap.Dispose();
+                    downSampledHeightmap.Dispose();
+                    scaledHeightmap.Dispose();
+                    noise.Dispose();
+                    scaledNoise.Dispose();
+                    customInput.Dispose();
+                }
             }
         }
 
@@ -361,7 +417,12 @@ namespace NeuralTerrainGeneration
             radius2 = upSampledWidth;
         }
 
-        private float[] GenerateHeightmap(UpSampleResolution upSampleResolutionArg)
+        private float[] GenerateHeightmap(
+            UpSampleResolution upSampleResolutionArg, 
+            int diffusionSteps, 
+            int startingStep = 0, 
+            Tensor customInput = null
+        )
         {
             if(runtimeModel == null)
             {
@@ -379,19 +440,29 @@ namespace NeuralTerrainGeneration
             float[] heightmap = new float[upSampledWidth * upSampledHeight];
             using(var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel))
             {
-                Tensor input = tensorMathHelper.RandomNormalTensor(
-                    1, 
-                    modelOutputWidth, 
-                    modelOutputHeight, 
-                    channels
-                );
+                Tensor input = new Tensor(1, modelOutputWidth, modelOutputHeight, channels);
+                
+                if(customInput != null)
+                {
+                    input = customInput;
+                }
+                else
+                {
+                    input = tensorMathHelper.RandomNormalTensor(
+                        1, 
+                        modelOutputWidth, 
+                        modelOutputHeight, 
+                        channels
+                    );
+                }
 
                 Tensor reverseDiffusionOutput = diffuser.ReverseDiffusion(
                     worker, 
                     input, 
-                    20, 
                     modelOutputWidth, 
-                    modelOutputHeight
+                    modelOutputHeight,
+                    diffusionSteps,
+                    startingStep
                 );
                 
                 if(upSampleResolutionArg != UpSampleResolution._256)
