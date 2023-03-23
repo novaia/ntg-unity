@@ -50,11 +50,11 @@ namespace NeuralTerrainGeneration
         public Tensor ReverseDiffusion(
             IWorker worker,
             Tensor initialNoise, 
-            int diffusionSteps,
             int modelOutputWidth,
             int modelOutputHeight,
-            int channels = 1,
+            int diffusionSteps,
             int startingStep = 0, 
+            int channels = 1,
             int batchSize = 1,
             float minSignalRate = 0.02f,
             float maxSignalRate = 0.9f
