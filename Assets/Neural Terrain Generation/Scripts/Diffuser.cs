@@ -114,14 +114,22 @@ namespace NeuralTerrainGeneration
                 Tensor nextSignalRates = nextRates[1];
 
                 // predictedImages * nextSignalRate
-                Tensor scaledPredictedImages = tensorMathHelper.ScaleTensorBatches(predictedImages, 
-                                                                                nextSignalRates);
+                Tensor scaledPredictedImages = tensorMathHelper.ScaleTensorBatches(
+                    predictedImages, 
+                    nextSignalRates
+                );
+
                 // predictedNoises * nextNoiseRate
-                Tensor scaledPredictedNoises2 = tensorMathHelper.ScaleTensorBatches(predictedNoises, 
-                                                                                    nextNoiseRates);
+                Tensor scaledPredictedNoises2 = tensorMathHelper.ScaleTensorBatches(
+                    predictedNoises, 
+                    nextNoiseRates
+                );
+
                 // predictedImages * nextSignalRate + predictedNoises * nextNoiseRate
-                nextNoisyImages = tensorMathHelper.AddTensor(scaledPredictedImages, 
-                                                            scaledPredictedNoises2);
+                nextNoisyImages = tensorMathHelper.AddTensor(
+                    scaledPredictedImages, 
+                    scaledPredictedNoises2
+                );
                 
                 scaledPredictedImages.Dispose();
                 scaledPredictedNoises2.Dispose();

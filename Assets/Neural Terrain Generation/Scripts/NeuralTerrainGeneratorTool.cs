@@ -34,6 +34,11 @@ namespace NeuralTerrainGeneration
         private const float maxSignalRate = 0.9f;
         private const float minSignalRate = 0.02f;
         private Diffuser diffuser = new Diffuser();
+        private int fromScratchDiffusionSteps = 20;
+        private int fromSelectedDiffusionSteps = 20;
+        private int fromSelectedStartingStep = 15;
+        private float selectedTerrainWeight = 0.55f;
+        private int brushHeightmapDiffusionSteps = 20;
 
         // Upsampling.
         private enum UpSampleMode {Bicubic};
@@ -95,23 +100,16 @@ namespace NeuralTerrainGeneration
             modelAsset = (NNModel)EditorGUILayout.ObjectField("Model Asset", modelAsset, typeof(NNModel), false);
 
             EditorGUILayout.Space();
+            EditorGUILayout.Space();
             BrushGUI();
             EditorGUILayout.Space();
-
-            heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
-            upSampleMode = (UpSampleMode)EditorGUILayout.EnumPopup("UpSample Mode", upSampleMode);
-            upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup("UpSample Resolution", upSampleResolution);
-            CalculateUpSampledDimensions();
-            CalculateBlendingRadii();
-
-            if(GUILayout.Button("Generate Terrain From Scratch"))
-            {
-                float[] heightmap = GenerateHeightmap(upSampleResolution);
-                terrainHelper.SetTerrainHeights(terrain, heightmap, upSampledWidth, upSampledHeight, heightMultiplier);
-            }
-
             EditorGUILayout.Space();
-
+            FromScratchGUI(terrain);
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            FromSelectedGUI();
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
             BlendGUI(terrain);
         }
 
@@ -146,6 +144,11 @@ namespace NeuralTerrainGeneration
                 brushSize = EditorGUILayout.Slider("Size", brushSize, .001f, 2000f);
                 brushRotation = EditorGUILayout.Slider("Rotation", brushRotation, 0, 360);
 
+                EditorGUILayout.Space();
+
+                // Diffusion controls.
+                brushHeightmapDiffusionSteps = EditorGUILayout.IntField("Brush Diffusion Steps", brushHeightmapDiffusionSteps);
+
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
                     // Brush heightmap is not upsampled, so keep it at 256x256.
@@ -174,6 +177,35 @@ namespace NeuralTerrainGeneration
                     EditorGUILayout.LabelField("Masked Brush Heightmap:");
                     GUILayout.Box(brushHeightmapMasked);
                 }
+            }
+        }
+
+        private void FromScratchGUI(Terrain terrain)
+        {
+            heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
+            upSampleMode = (UpSampleMode)EditorGUILayout.EnumPopup("UpSample Mode", upSampleMode);
+            upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup("UpSample Resolution", upSampleResolution);
+            CalculateUpSampledDimensions();
+            CalculateBlendingRadii();
+
+            fromScratchDiffusionSteps = EditorGUILayout.IntField("From Scratch Diffusion Steps", fromScratchDiffusionSteps);
+
+            if(GUILayout.Button("Generate Terrain From Scratch"))
+            {
+                float[] heightmap = GenerateHeightmap(upSampleResolution);
+                terrainHelper.SetTerrainHeights(terrain, heightmap, upSampledWidth, upSampledHeight, heightMultiplier);
+            }
+        }
+
+        private void FromSelectedGUI()
+        {
+            fromSelectedDiffusionSteps = EditorGUILayout.IntField("From Selected Diffusion Steps", fromSelectedDiffusionSteps);
+            fromSelectedStartingStep = EditorGUILayout.IntField("From Selected Starting Step", fromSelectedStartingStep);
+            selectedTerrainWeight = EditorGUILayout.Slider("Selected Terrain Weight", selectedTerrainWeight, 0.0f, 1.0f);
+
+            if(GUILayout.Button("Generate Terrain From Selected"))
+            {
+
             }
         }
 
