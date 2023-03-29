@@ -3,18 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Barracuda;
 
-public class DownSampler
+namespace NeuralTerrainGeneration
 {
-    public Tensor DownSample(Tensor original, int factor)
+    public class DownSampler
     {
-        Tensor downSampled = new Tensor(1, original.height / factor, original.width / factor, 1);
-        for(int x = 0; x < downSampled.width; x++)
+        public Tensor DownSample(Tensor original, int factor)
         {
-            for(int y = 0; y < downSampled.height; y++)
+            Tensor downSampled = new Tensor(1, original.height / factor, original.width / factor, 1);
+            for(int x = 0; x < downSampled.width; x++)
             {
-                downSampled[0, y, x, 0] = original[0, y * factor, x * factor, 0];
+                for(int y = 0; y < downSampled.height; y++)
+                {
+                    downSampled[0, y, x, 0] = original[0, y * factor, x * factor, 0];
+                }
             }
+            return downSampled;
         }
-        return downSampled;
     }
 }
