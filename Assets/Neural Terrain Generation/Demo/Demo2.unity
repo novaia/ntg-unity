@@ -173,7 +173,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -345,7 +345,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -423,7 +423,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -501,7 +501,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -579,7 +579,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -657,7 +657,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -735,7 +735,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -813,7 +813,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -891,7 +891,7 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_StaticShadowCaster: 0
   m_ReflectionProbeUsage: 1
@@ -1018,31 +1018,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 823.4694
+      value: 1607
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 254.89
+      value: 366
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1102.0532
+      value: -495
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.22593144
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.97414327
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1050,7 +1050,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 153.885
       objectReference: {fileID: 0}
     - target: {fileID: 4394092795163320982, guid: 2a034dca4a4954540bccf0f80bc5ee5d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z

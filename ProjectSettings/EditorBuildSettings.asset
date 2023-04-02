@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Neural Terrain Generation/Demo/Demo2.unity
+    guid: d99547507c2f89e43bb26750ef17f7cb
   m_configObjects: {}
