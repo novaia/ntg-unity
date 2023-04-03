@@ -14,6 +14,14 @@ namespace NeuralTerrainGeneration.Demo
         private void Start()
         {
             currentCycleTime = cycleTime;
+            for(int i = 0; i < terrains.Length; i++)
+            {
+                terrains[i].gameObject.SetActive(false);
+            }
+            if(terrains.Length > 0)
+            {
+                terrains[0].gameObject.SetActive(true);
+            }
         }
 
         private void Update()
