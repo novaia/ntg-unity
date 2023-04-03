@@ -230,7 +230,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 0.25
+  m_Intensity: 0.35
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -306,6 +306,7 @@ GameObject:
   - component: {fileID: 145172719}
   - component: {fileID: 145172718}
   - component: {fileID: 145172717}
+  - component: {fileID: 145172720}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -371,14 +372,33 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 145172716}
-  m_LocalRotation: {x: 0.27507973, y: -0.40328458, z: 0.13563551, w: 0.862146}
-  m_LocalPosition: {x: 2123.4487, y: 841.14465, z: 50.998367}
+  m_LocalRotation: {x: 0.32265803, y: -0.39510658, z: 0.15788034, w: 0.8454918}
+  m_LocalPosition: {x: 2101.6, y: 662, z: 71.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 42.096, y: -49.738, z: 0.927}
+--- !u!114 &145172720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 145172716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e414d047591aab41866da395946acb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 145172719}
+  rotSpeed: 5
+  moveSpeed: 100
+  rotation: {x: -1, y: 0, z: 0}
+  moveDir: {x: 0, y: 0, z: 0}
+  moveForward: 1
+  localRotation: 1
 --- !u!1 &383639125
 GameObject:
   m_ObjectHideFlags: 0
@@ -564,13 +584,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5129f294925f6e945b4bf7788a01374f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  terrains:
-  - {fileID: 724557773}
-  - {fileID: 383639127}
-  - {fileID: 57685876}
-  - {fileID: 1713547748}
-  cycleTime: 1
+  objects:
+  - {fileID: 724557771}
+  - {fileID: 383639125}
+  - {fileID: 57685874}
+  - {fileID: 1713547746}
+  cycleTime: 1.5
   currentCycleTime: 0
+  repeatCycle: 0
 --- !u!4 &935232323
 Transform:
   m_ObjectHideFlags: 0
