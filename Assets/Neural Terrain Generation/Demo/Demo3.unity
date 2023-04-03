@@ -781,11 +781,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5129f294925f6e945b4bf7788a01374f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  terrains:
-  - {fileID: 288571019}
-  - {fileID: 572533617}
-  - {fileID: 1202055435}
-  - {fileID: 288727839}
-  - {fileID: 731972091}
+  objects:
+  - {fileID: 288571017}
+  - {fileID: 572533615}
+  - {fileID: 1202055433}
+  - {fileID: 288727837}
+  - {fileID: 731972089}
   cycleTime: 5
   currentCycleTime: 0
+  repeatCycle: 1
