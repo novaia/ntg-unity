@@ -170,7 +170,7 @@ MonoBehaviour:
   objects:
   - {fileID: 1087204184}
   - {fileID: 927475536}
-  cycleTime: 10
+  cycleTime: 14
   currentCycleTime: 0
   repeatCycle: 0
 --- !u!1 &316420114
@@ -304,6 +304,7 @@ MonoBehaviour:
   rotation: {x: 0, y: 1, z: 0}
   moveDir: {x: 0, y: 0, z: 0}
   moveForward: 1
+  localRotation: 0
 --- !u!81 &927475538
 AudioListener:
   m_ObjectHideFlags: 0
@@ -473,6 +474,7 @@ MonoBehaviour:
   rotation: {x: 0, y: 1, z: 0}
   moveDir: {x: 0, y: 0, z: 0}
   moveForward: 1
+  localRotation: 0
 --- !u!1 &1585769069
 GameObject:
   m_ObjectHideFlags: 0

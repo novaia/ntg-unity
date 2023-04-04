@@ -720,7 +720,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef3756e42eca5f94f8e13ffeb5afa0b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rotationSpeed: 20
+  rotationSpeed: 10
 --- !u!4 &1921398415
 Transform:
   m_ObjectHideFlags: 0
@@ -787,6 +787,6 @@ MonoBehaviour:
   - {fileID: 1202055433}
   - {fileID: 288727837}
   - {fileID: 731972089}
-  cycleTime: 5
+  cycleTime: 10
   currentCycleTime: 0
   repeatCycle: 1
