@@ -67,6 +67,7 @@ namespace NeuralTerrainGeneration
         private float brushOpacity = 0.1f;
         private float brushSize = 25f;
         private float brushRotation = 0f;
+        private float brushHeightOffset = 0.5f;
         private Texture2D brushMask;
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
@@ -148,6 +149,7 @@ namespace NeuralTerrainGeneration
                 brushOpacity = EditorGUILayout.Slider("Opacity", brushOpacity, 0, 1);
                 brushSize = EditorGUILayout.Slider("Size", brushSize, .001f, 2000f);
                 brushRotation = EditorGUILayout.Slider("Rotation", brushRotation, 0, 360);
+                brushHeightOffset = EditorGUILayout.Slider("Height Offset", brushHeightOffset, 0, 1);
 
                 EditorGUILayout.Space();
 
@@ -158,6 +160,10 @@ namespace NeuralTerrainGeneration
                 {
                     // Brush heightmap is not upsampled, so keep it at 256x256.
                     float[] brushHeightmapArray = GenerateHeightmap(UpSampleResolution._256, brushHeightmapDiffusionSteps);
+                    for(int i = 0; i < brushHeightmapArray.Length; i++)
+                    {
+                        brushHeightmapArray[i] -= brushHeightOffset;
+                    }
 
                     Color[] colorBrushHeightmap = new Color[brushHeightmapArray.Length];
                     for(int i = 0; i < brushHeightmapArray.Length; i++)
