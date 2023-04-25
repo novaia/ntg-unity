@@ -68,6 +68,8 @@ namespace NeuralTerrainGeneration
         private float brushSize = 25f;
         private float brushRotation = 0f;
         private float brushHeightOffset = 0.5f;
+        private bool stampMode = true;
+        private bool hasPainted = false;
         private Texture2D brushMask;
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
@@ -150,6 +152,7 @@ namespace NeuralTerrainGeneration
                 brushSize = EditorGUILayout.Slider("Size", brushSize, .001f, 2000f);
                 brushRotation = EditorGUILayout.Slider("Rotation", brushRotation, 0, 360);
                 brushHeightOffset = EditorGUILayout.Slider("Height Offset", brushHeightOffset, 0, 1);
+                stampMode = EditorGUILayout.Toggle("Stamp Mode", stampMode);
 
                 EditorGUILayout.Space();
 
@@ -384,6 +387,11 @@ namespace NeuralTerrainGeneration
         public override bool OnPaint(Terrain terrain, IOnPaint editContext)
         {
             if(!brushesEnabled) { return false; }
+            if(stampMode)
+            {
+                if(hasPainted) { return false; }
+                hasPainted = true;
+            }
 
             // Get the current BrushTransform under the mouse position relative to the Terrain
             BrushTransform brushXform = TerrainPaintUtility.CalculateBrushTransform(
@@ -410,6 +418,18 @@ namespace NeuralTerrainGeneration
 
             // Return whether or not Trees and Details should be hidden while painting with this Terrain Tool
             return true;
+        }
+
+        public override void OnSceneGUI(Terrain terrain, IOnSceneGUI editContext)
+        {
+            Event current = Event.current;
+            switch(current.type)
+            {
+                // Keep track of when mouse has been released in order to determine if user can paint in stamp mode.
+                case EventType.MouseUp:
+                    hasPainted = false;
+                    break;
+            }
         }
 
         private void CalculateUpSampledDimensions()
