@@ -62,6 +62,7 @@ namespace NeuralTerrainGeneration
             IDictionary<string, Tensor> inputs = new Dictionary<string, Tensor>();
             inputs.Add(inputName, inputTensor);
             worker.Execute(inputs);
+            inputTensor.Dispose();
             Tensor output = worker.PeekOutput();
             return output;
         }

@@ -1,4 +1,4 @@
-#if (UNITY_EDITOR)
+#if UNITY_EDITOR
 
 using System.Collections;
 using System.Collections.Generic;
@@ -43,8 +43,6 @@ namespace NeuralTerrainGeneration
         private int brushHeightmapDiffusionSteps = 20;
 
         // Upsampling.
-        private enum UpSampleMode {Bicubic};
-        private UpSampleMode upSampleMode = UpSampleMode.Bicubic;
         // Left: upsample resolution, right: upsample factor.
         private enum UpSampleResolution 
         {
@@ -56,6 +54,8 @@ namespace NeuralTerrainGeneration
         };
         private UpSampleResolution upSampleResolution = UpSampleResolution._512;
         private BicbubicUpSampler bicubicUpSampler = new BicbubicUpSampler();
+        private enum UpSamplerType { Barracuda, Custom };
+        private UpSamplerType upSamplerType = UpSamplerType.Barracuda;
         
         // Downsampling.
         private DownSampler downSampler = new DownSampler();
@@ -71,8 +71,10 @@ namespace NeuralTerrainGeneration
         private bool stampMode = true;
         private bool hasPainted = false;
         private Texture2D brushMask;
+        //private Texture2D upSampledBrushMask;
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
+        private Texture2D brushHeightmapUpSampled;
 
         public override string GetName()
         {
@@ -88,16 +90,45 @@ namespace NeuralTerrainGeneration
         {
             if(brushHeightmap == null || brushMask == null) { return; }
 
+            Tensor brushMaskTensor = new Tensor(brushMask, 1);
+            int upSampleFactor = (int)upSampleResolution;
+            BarraUpSampler barraUpSampler = new BarraUpSampler(
+                modelOutputWidth,
+                modelOutputHeight,
+                upSampleFactor, 
+                true,
+                WorkerFactory.Type.ComputePrecompiled
+            );
+            brushMaskTensor = barraUpSampler.Execute(brushMaskTensor);
+
+            RenderTexture rt = BarracudaTextureUtils.TensorToRenderTexture(brushMaskTensor);
+            brushHeightmapUpSampled = new Texture2D(rt.width, rt.height);
+            RenderTexture.active = rt;
+            brushHeightmapUpSampled.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            brushHeightmapUpSampled.Apply();
+            RenderTexture.active = null;
+            
             brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
 
             Color[] brushHeightmapColors = brushHeightmap.GetPixels();
             Color[] brushMaskColors = brushMask.GetPixels();
             Color[] brushHeightmapMaskedColors = new Color[brushHeightmapColors.Length];
-            
+
             for(int i = 0; i < brushHeightmapColors.Length; i++)
             {
-                brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColors[i].r;
+                Color brushMaskColor = new Color(brushMaskTensor[i], 0, 0, 1);
+                brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColor.r;
             }
+            
+            /*for(int i = 0; i < brushHeightmapColors.Length; i++)
+            {
+                brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColors[i].r;
+            }*/
+            
+
+            brushMaskTensor.Dispose();
+            barraUpSampler.Dispose();
+            Debug.Log("hi");
 
             brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
             brushHeightmapMasked.Apply();
@@ -139,10 +170,20 @@ namespace NeuralTerrainGeneration
 
                 // Brush mask.
                 EditorGUILayout.HelpBox("Brush masks must be 256x256.", MessageType.Info);
-                Texture2D tempBrushMask = (Texture2D)EditorGUILayout.ObjectField("Brush Mask", brushMask, typeof(Texture2D), false);
-                if(tempBrushMask)
+                Texture2D tempBrushMask = (Texture2D)EditorGUILayout.ObjectField(
+                    "Brush Mask", 
+                    brushMask, 
+                    typeof(Texture2D), 
+                    false
+                );
+
+                if(tempBrushMask != brushMask)
                 {
                     brushMask = tempBrushMask;
+                    GenerateMaskedBrushHeightmap();
+                }
+                if(GUILayout.Button("Generate Brush Mask"))
+                {
                     GenerateMaskedBrushHeightmap();
                 }
                 EditorGUILayout.Space();
@@ -157,12 +198,21 @@ namespace NeuralTerrainGeneration
                 EditorGUILayout.Space();
 
                 // Diffusion controls.
-                brushHeightmapDiffusionSteps = EditorGUILayout.IntField("Brush Diffusion Steps", brushHeightmapDiffusionSteps);
+                brushHeightmapDiffusionSteps = EditorGUILayout.IntField(
+                    "Brush Diffusion Steps", 
+                    brushHeightmapDiffusionSteps
+                );
 
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
-                    // Brush heightmap is not upsampled, so keep it at 256x256.
-                    float[] brushHeightmapArray = GenerateHeightmap(UpSampleResolution._256, brushHeightmapDiffusionSteps);
+                    GenerateMaskedBrushHeightmap();
+                    // Brush heightmap is not upsampled, so keep it at 256x256. No.
+                    float[] brushHeightmapArray = GenerateHeightmap(
+                        //UpSampleResolution._256,
+                        upSampleResolution, 
+                        brushHeightmapDiffusionSteps
+                    );
+
                     for(int i = 0; i < brushHeightmapArray.Length; i++)
                     {
                         brushHeightmapArray[i] -= brushHeightOffset;
@@ -171,12 +221,22 @@ namespace NeuralTerrainGeneration
                     Color[] colorBrushHeightmap = new Color[brushHeightmapArray.Length];
                     for(int i = 0; i < brushHeightmapArray.Length; i++)
                     {
-                        colorBrushHeightmap[i] = new Color(brushHeightmapArray[i], brushHeightmapArray[i], brushHeightmapArray[i]);
+                        colorBrushHeightmap[i] = new Color(
+                            brushHeightmapArray[i], 
+                            brushHeightmapArray[i], 
+                            brushHeightmapArray[i]
+                        );
                     }
 
                     // Dimensions equal to model output dimensions because there is no upsampling.
                     brushHeightmap = new Texture2D(modelOutputWidth, modelOutputHeight);
-                    brushHeightmap.SetPixels(0, 0, modelOutputWidth, modelOutputHeight, colorBrushHeightmap);
+                    brushHeightmap.SetPixels(
+                        0, 
+                        0, 
+                        modelOutputWidth, 
+                        modelOutputHeight, 
+                        colorBrushHeightmap
+                    );
                     brushHeightmap.Apply();
                 }
 
@@ -191,23 +251,50 @@ namespace NeuralTerrainGeneration
                     EditorGUILayout.LabelField("Masked Brush Heightmap:");
                     GUILayout.Box(brushHeightmapMasked);
                 }
+                if(brushHeightmapUpSampled != null)
+                {
+                    EditorGUILayout.LabelField("UpSampled Brush Heightmap:");
+                    GUILayout.Box(brushHeightmapUpSampled);
+                }
             }
         }
 
         private void FromScratchGUI(Terrain terrain)
         {
-            heightMultiplier = EditorGUILayout.FloatField("Height Multiplier", heightMultiplier);
-            upSampleMode = (UpSampleMode)EditorGUILayout.EnumPopup("UpSample Mode", upSampleMode);
-            upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup("UpSample Resolution", upSampleResolution);
+            heightMultiplier = EditorGUILayout.FloatField(
+                "Height Multiplier", 
+                heightMultiplier
+            );
+            upSamplerType = (UpSamplerType)EditorGUILayout.EnumPopup(
+                "UpSampler Type", 
+                upSamplerType
+            );
+            upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup(
+                "UpSample Resolution", 
+                upSampleResolution
+            );
             CalculateUpSampledDimensions();
             CalculateBlendingRadii();
 
-            fromScratchDiffusionSteps = EditorGUILayout.IntField("From Scratch Diffusion Steps", fromScratchDiffusionSteps);
+            fromScratchDiffusionSteps = EditorGUILayout.IntField(
+                "From Scratch Diffusion Steps", 
+                fromScratchDiffusionSteps
+            );
 
             if(GUILayout.Button("Generate Terrain From Scratch"))
             {
-                float[] heightmap = GenerateHeightmap(upSampleResolution, fromScratchDiffusionSteps);
-                terrainHelper.SetTerrainHeights(terrain, heightmap, upSampledWidth, upSampledHeight, heightMultiplier);
+                float[] heightmap = GenerateHeightmap(
+                    upSampleResolution, 
+                    fromScratchDiffusionSteps
+                );
+
+                terrainHelper.SetTerrainHeights(
+                    terrain, 
+                    heightmap, 
+                    upSampledWidth, 
+                    upSampledHeight, 
+                    heightMultiplier
+                );
             }
         }
 
@@ -295,7 +382,11 @@ namespace NeuralTerrainGeneration
             } 
         }
 
-        private void RenderIntoPaintContext(PaintContext paintContext, Texture brushTexture, BrushTransform brushXform)
+        private void RenderIntoPaintContext(
+            PaintContext paintContext, 
+            Texture brushTexture, 
+            BrushTransform brushXform
+        )
         {
             // Get the built-in painting Material reference.
             Material mat = TerrainPaintUtility.GetBuiltinPaintMaterial();
@@ -310,11 +401,20 @@ namespace NeuralTerrainGeneration
             // Setup the material for reading from/writing into the PaintContext texture data. 
             // This is a necessary step to setup the correct shader properties for 
             // appropriately transforming UVs and sampling textures within the shader.
-            TerrainPaintUtility.SetupTerrainToolMaterialProperties(paintContext, brushXform, mat);
+            TerrainPaintUtility.SetupTerrainToolMaterialProperties(
+                paintContext, 
+                brushXform, 
+                mat
+            );
             
             // Render into the PaintContext's destinationRenderTexture using 
             // the built-in painting Material - the id for the Raise/Lower pass is 0.
-            Graphics.Blit(paintContext.sourceRenderTexture, paintContext.destinationRenderTexture, mat, 0);
+            Graphics.Blit(
+                paintContext.sourceRenderTexture, 
+                paintContext.destinationRenderTexture, 
+                mat, 
+                0
+            );
         }
 
         // Render Tool previews in the SceneView
@@ -414,7 +514,10 @@ namespace NeuralTerrainGeneration
 
             // Commit the modified PaintContext with a provided string for tracking Undo operations. 
             // This function handles Undo and resource cleanup for you.
-            TerrainPaintUtility.EndPaintHeightmap(paintContext, "Terrain Paint - Raise or Lower Height");
+            TerrainPaintUtility.EndPaintHeightmap(
+                paintContext, 
+                "Terrain Paint - Raise or Lower Height"
+            );
 
             // Return whether or not Trees and Details should be hidden while painting with this Terrain Tool
             return true;
@@ -466,7 +569,12 @@ namespace NeuralTerrainGeneration
             }
 
             float[] heightmap = new float[upSampledWidth * upSampledHeight];
-            using(var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel))
+            using(
+                var worker = WorkerFactory.CreateWorker(
+                    WorkerFactory.Type.ComputePrecompiled, 
+                    runtimeModel
+                )
+            )
             {
                 Tensor input = new Tensor(1, modelOutputWidth, modelOutputHeight, channels);
                 
@@ -495,19 +603,29 @@ namespace NeuralTerrainGeneration
                 
                 if(upSampleResolutionArg != UpSampleResolution._256)
                 {
-                    int upSampleFactor = (int)upSampleResolution;
-                    BarraUpSampler barraUpSampler = new BarraUpSampler(
-                        modelOutputWidth,
-                        modelOutputHeight,
-                        upSampleFactor, 
-                        true,
-                        WorkerFactory.Type.ComputePrecompiled
-                    );
-                    //heightmap = bicubicUpSampler.BicubicUpSample(reverseDiffusionOutput, upSampleFactor);
-                    Tensor upSampledTensor = barraUpSampler.Execute(reverseDiffusionOutput);
-                    heightmap = upSampledTensor.ToReadOnlyArray();
-                    upSampledTensor.Dispose();
-                    barraUpSampler.Dispose();
+                    int upSampleFactor = (int)upSampleResolutionArg;
+
+                    if(upSamplerType == UpSamplerType.Custom)
+                    {
+                        heightmap = bicubicUpSampler.BicubicUpSample(
+                            reverseDiffusionOutput, 
+                            upSampleFactor
+                        );
+                    }
+                    else if(upSamplerType == UpSamplerType.Barracuda)
+                    {
+                        BarraUpSampler barraUpSampler = new BarraUpSampler(
+                            modelOutputWidth,
+                            modelOutputHeight,
+                            upSampleFactor, 
+                            true,
+                            WorkerFactory.Type.ComputePrecompiled
+                        );
+                        Tensor upSampledTensor = barraUpSampler.Execute(reverseDiffusionOutput);
+                        heightmap = upSampledTensor.ToReadOnlyArray();
+                        upSampledTensor.Dispose();
+                        barraUpSampler.Dispose();
+                    }
                 }
                 else
                 {
