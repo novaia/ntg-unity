@@ -21,6 +21,10 @@ public class BenchmarkingEditor : Editor
         {
             benchmarking.BarraMulBenchmark();
         }
+        if(GUILayout.Button("Barra Mul Prebuilt Benchmark"))
+        {
+            benchmarking.BarraMulPrebuiltBenchmark();
+        }
         if(GUILayout.Button("Normal Mul Benchmark"))
         {
             benchmarking.NormalMulBenchmark();

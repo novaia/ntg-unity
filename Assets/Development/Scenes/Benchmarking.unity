@@ -153,6 +153,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numTrials: 100
+  tensorSize: 100
+  workerType: 256
 --- !u!4 &378618044
 Transform:
   m_ObjectHideFlags: 0
