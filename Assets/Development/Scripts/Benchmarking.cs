@@ -8,6 +8,8 @@ using NeuralTerrainGeneration;
 public class Benchmarking : MonoBehaviour
 {
     [SerializeField] private int numTrials = 100;
+    [SerializeField] private int tensorSize = 100;
+    [SerializeField] private WorkerFactory.Type workerType = WorkerFactory.Type.ComputePrecompiled;
     
     public void NormalAdd(Tensor tensor1, Tensor tensor2)
     {
@@ -34,7 +36,7 @@ public class Benchmarking : MonoBehaviour
         builder.Output(addLayer);
         Model model = builder.model;
 
-        IWorker worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
+        IWorker worker = WorkerFactory.CreateWorker(workerType, model);
         worker.Execute();
         Tensor output = worker.PeekOutput();
 
@@ -50,8 +52,8 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             BarraAdd(
-                PopulatedTensor(2, 100, 100),
-                PopulatedTensor(1, 100, 100)
+                PopulatedTensor(2, tensorSize, tensorSize),
+                PopulatedTensor(1, tensorSize, tensorSize)
             );
         }
         watch.Stop();
@@ -64,8 +66,8 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             NormalAdd(
-                PopulatedTensor(2, 100, 100),
-                PopulatedTensor(1, 100, 100)
+                PopulatedTensor(2, tensorSize, tensorSize),
+                PopulatedTensor(1, tensorSize, tensorSize)
             );
         }
         watch.Stop();
@@ -84,7 +86,7 @@ public class Benchmarking : MonoBehaviour
         builder.Output(mulLayer);
         Model model = builder.model;
 
-        IWorker worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
+        IWorker worker = WorkerFactory.CreateWorker(workerType, model);
         worker.Execute();
         Tensor output = worker.PeekOutput();
 
@@ -92,6 +94,20 @@ public class Benchmarking : MonoBehaviour
         tensor2.Dispose();
         output.Dispose();
         worker.Dispose();
+    }
+
+    private void BarraMulPrebuilt(Tensor tensor1, Tensor tensor2, IWorker worker)
+    {
+        IDictionary<string, Tensor> inputDict = new Dictionary<string, Tensor>();
+        inputDict.Add("tensor1", tensor1);
+        inputDict.Add("tensor2", tensor2);
+
+        worker.Execute(inputDict);
+        Tensor output = worker.PeekOutput();
+
+        tensor1.Dispose();
+        tensor2.Dispose();
+        output.Dispose();
     }
 
     private void NormalMul(Tensor tensor1, Tensor tensor2)
@@ -131,12 +147,48 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             BarraMul(
-                PopulatedTensor(2, 100, 100),
-                PopulatedTensor(3, 100, 100)
+                PopulatedTensor(2, tensorSize, tensorSize),
+                PopulatedTensor(3, tensorSize, tensorSize)
             );
         }
         watch.Stop();
         Debug.Log("BarraMul: " + watch.ElapsedMilliseconds + "ms");
+    }
+
+    public void BarraMulPrebuiltBenchmark()
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+
+        ModelBuilder builder = new ModelBuilder();
+        Model.Input inputLayer1 = builder.Input("tensor1", 1, tensorSize, tensorSize, 1);
+        Model.Input inputLayer2 = builder.Input("tensor2", 1, tensorSize, tensorSize, 1);
+
+        object[] inputs = new object[] 
+        { 
+            inputLayer1.name,
+            inputLayer2.name 
+        };
+    
+        Layer mulLayer = builder.Mul("Mul", inputs);
+        builder.Output(mulLayer);
+        Model model = builder.model;
+
+        IWorker worker = WorkerFactory.CreateWorker(
+            workerType, 
+            model
+        );
+
+        for(int i = 0; i < numTrials; i++)
+        {
+            BarraMulPrebuilt(
+                PopulatedTensor(2, tensorSize, tensorSize),
+                PopulatedTensor(3, tensorSize, tensorSize),
+                worker
+            );
+        }
+        worker.Dispose();
+        watch.Stop();
+        Debug.Log("BarraMulPrebuilt: " + watch.ElapsedMilliseconds + "ms");
     }
 
     public void NormalMulBenchmark()
@@ -145,8 +197,8 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             NormalMul(
-                PopulatedTensor(2, 100, 100),
-                PopulatedTensor(3, 100, 100)
+                PopulatedTensor(2, tensorSize, tensorSize),
+                PopulatedTensor(3, tensorSize, tensorSize)
             );
         }
         watch.Stop();
@@ -160,8 +212,8 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             BurstMul(
-                PopulatedTensor(2, 100, 100),
-                PopulatedTensor(3, 100, 100),
+                PopulatedTensor(2, tensorSize, tensorSize),
+                PopulatedTensor(3, tensorSize, tensorSize),
                 ops
             );
         }
@@ -176,8 +228,8 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             UnsafeMul(
-                PopulatedTensor(2, 100, 100),
-                PopulatedTensor(3, 100, 100),
+                PopulatedTensor(2, tensorSize, tensorSize),
+                PopulatedTensor(3, tensorSize, tensorSize),
                 ops
             );
         }
@@ -194,7 +246,7 @@ public class Benchmarking : MonoBehaviour
         builder.Output(upsampleLayer);
         Model model = builder.model;
 
-        IWorker worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
+        IWorker worker = WorkerFactory.CreateWorker(workerType, model);
         worker.Execute();
         Tensor output = worker.PeekOutput();
 
@@ -214,7 +266,7 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             BarraUpsample(
-                PopulatedTensor(2, 256, 256)
+                PopulatedTensor(2, tensorSize, tensorSize)
             );
         }
         watch.Stop();
@@ -228,7 +280,7 @@ public class Benchmarking : MonoBehaviour
         for(int i = 0; i < numTrials; i++)
         {
             NormalUpsample(
-                PopulatedTensor(2, 256, 256),
+                PopulatedTensor(2, tensorSize, tensorSize),
                 2,
                 upsampler
             );
