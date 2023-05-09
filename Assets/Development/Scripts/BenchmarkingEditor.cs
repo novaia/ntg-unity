@@ -37,5 +37,9 @@ public class BenchmarkingEditor : Editor
         {
             benchmarking.BarraUpsampleBenchmark();
         }
+        if(GUILayout.Button("Normal Upsample Benchmark"))
+        {
+            benchmarking.NormalUpsampleBenchmark();
+        }
     }
 }

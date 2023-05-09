@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Barracuda;
 using System;
+using NeuralTerrainGeneration;
 
 public class Benchmarking : MonoBehaviour
 {
@@ -202,6 +203,11 @@ public class Benchmarking : MonoBehaviour
         worker.Dispose();
     }
 
+    private void NormalUpsample(Tensor tensor, int factor, BicbubicUpSampler upsampler)
+    {
+        upsampler.BicubicUpSample(tensor, factor);
+    }
+
     public void BarraUpsampleBenchmark()
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -213,6 +219,22 @@ public class Benchmarking : MonoBehaviour
         }
         watch.Stop();
         Debug.Log("BarraUpsample: " + watch.ElapsedMilliseconds + "ms");
+    }
+
+    public void NormalUpsampleBenchmark()
+    {
+        BicbubicUpSampler upsampler = new BicbubicUpSampler();
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        for(int i = 0; i < numTrials; i++)
+        {
+            NormalUpsample(
+                PopulatedTensor(2, 256, 256),
+                2,
+                upsampler
+            );
+        }
+        watch.Stop();
+        Debug.Log("NormalUpsample: " + watch.ElapsedMilliseconds + "ms");
     }
 
     public Tensor PopulatedTensor(float element, int width, int height)
