@@ -114,6 +114,9 @@ namespace NeuralTerrainGeneration
             Color[] brushMaskColors = brushMask.GetPixels();
             Color[] brushHeightmapMaskedColors = new Color[brushHeightmapColors.Length];
 
+            Debug.Log("brushHeightmapColors.Length: " + brushHeightmapColors.Length/256);
+            Debug.Log("brushMaskTensor.length: " + brushMaskTensor.length/256);
+
             for(int i = 0; i < brushHeightmapColors.Length; i++)
             {
                 Color brushMaskColor = new Color(brushMaskTensor[i], 0, 0, 1);
@@ -128,10 +131,11 @@ namespace NeuralTerrainGeneration
 
             brushMaskTensor.Dispose();
             barraUpSampler.Dispose();
-            Debug.Log("hi");
 
+            brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
             brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
             brushHeightmapMasked.Apply();
+            Debug.Log(brushHeightmapMasked.width);
         }
 
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
@@ -205,7 +209,6 @@ namespace NeuralTerrainGeneration
 
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
-                    GenerateMaskedBrushHeightmap();
                     // Brush heightmap is not upsampled, so keep it at 256x256. No.
                     float[] brushHeightmapArray = GenerateHeightmap(
                         //UpSampleResolution._256,
@@ -228,20 +231,24 @@ namespace NeuralTerrainGeneration
                         );
                     }
 
-                    // Dimensions equal to model output dimensions because there is no upsampling.
-                    brushHeightmap = new Texture2D(modelOutputWidth, modelOutputHeight);
+                    // Dimensions equal to model output dimensions because there is no upsampling. No.
+                    CalculateUpSampledDimensions();
+                    brushHeightmap = new Texture2D(upSampledWidth, upSampledHeight);
                     brushHeightmap.SetPixels(
                         0, 
                         0, 
-                        modelOutputWidth, 
-                        modelOutputHeight, 
+                        upSampledWidth, 
+                        upSampledHeight, 
                         colorBrushHeightmap
                     );
                     brushHeightmap.Apply();
+
+                    GenerateMaskedBrushHeightmap();
                 }
 
                 // Display brush heightmap and masked heightmap if they exist.
-                if(brushHeightmap != null)
+                // Hiding these until I can downscale them for the inspector.
+                /*if(brushHeightmap != null)
                 {
                     EditorGUILayout.LabelField("Brush Heightmap:");
                     GUILayout.Box(brushHeightmap);
@@ -255,7 +262,7 @@ namespace NeuralTerrainGeneration
                 {
                     EditorGUILayout.LabelField("UpSampled Brush Heightmap:");
                     GUILayout.Box(brushHeightmapUpSampled);
-                }
+                }*/
             }
         }
 
