@@ -152,8 +152,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e26fcc323a566a444bb20364721a4b2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numTrials: 100
-  tensorSize: 100
+  numTrials: 1000
+  tensorSize: 256
   workerType: 256
 --- !u!4 &378618044
 Transform:

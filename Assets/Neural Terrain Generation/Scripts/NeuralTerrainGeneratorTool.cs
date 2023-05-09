@@ -496,7 +496,18 @@ namespace NeuralTerrainGeneration
                 if(upSampleResolutionArg != UpSampleResolution._256)
                 {
                     int upSampleFactor = (int)upSampleResolution;
-                    heightmap = bicubicUpSampler.BicubicUpSample(reverseDiffusionOutput, upSampleFactor);
+                    BarraUpSampler barraUpSampler = new BarraUpSampler(
+                        modelOutputWidth,
+                        modelOutputHeight,
+                        upSampleFactor, 
+                        true,
+                        WorkerFactory.Type.ComputePrecompiled
+                    );
+                    //heightmap = bicubicUpSampler.BicubicUpSample(reverseDiffusionOutput, upSampleFactor);
+                    Tensor upSampledTensor = barraUpSampler.Execute(reverseDiffusionOutput);
+                    heightmap = upSampledTensor.ToReadOnlyArray();
+                    upSampledTensor.Dispose();
+                    barraUpSampler.Dispose();
                 }
                 else
                 {
