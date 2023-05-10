@@ -22,6 +22,9 @@ namespace NeuralTerrainGeneration
         private int upSampledHeight = 0;
         private float heightMultiplier = 0.5f;
         private int channels = 1;
+        private const string modelFolder = "Assets/NeuralTerrainGeneration/NNModels/";
+        private const string modelName = "pix_diffuser_epoch62.onnx";
+        private const string fullModelPath = modelFolder + modelName;
         private NNModel modelAsset;
         private Model runtimeModel;
 
@@ -75,6 +78,9 @@ namespace NeuralTerrainGeneration
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
         private Texture2D brushHeightmapUpSampled;
+        private const string brushFolder = "Assets/NeuralTerrainGeneration/BrushMasks/";
+        private const string defaultBrushName = "square_brush_01.png";
+        private const string fullBrushPath = brushFolder + defaultBrushName;
 
         public override string GetName()
         {
@@ -84,6 +90,12 @@ namespace NeuralTerrainGeneration
         public override string GetDescription()
         {
             return "Diffusion based neural terrain generator.";
+        }
+
+        public override void OnEnable()
+        {
+            LoadModel();
+            LoadBrushMask();
         }
 
         private void GenerateMaskedBrushHeightmap()
@@ -141,6 +153,15 @@ namespace NeuralTerrainGeneration
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
         {
             modelAsset = (NNModel)EditorGUILayout.ObjectField("Model Asset", modelAsset, typeof(NNModel), false);
+            upSamplerType = (UpSamplerType)EditorGUILayout.EnumPopup(
+                "UpSampler Type", 
+                upSamplerType
+            );
+            upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup(
+                "UpSample Resolution", 
+                upSampleResolution
+            );
+            CalculateUpSampledDimensions();
 
             EditorGUILayout.Space();
             EditorGUILayout.Space();
@@ -184,10 +205,6 @@ namespace NeuralTerrainGeneration
                 if(tempBrushMask != brushMask)
                 {
                     brushMask = tempBrushMask;
-                    GenerateMaskedBrushHeightmap();
-                }
-                if(GUILayout.Button("Generate Brush Mask"))
-                {
                     GenerateMaskedBrushHeightmap();
                 }
                 EditorGUILayout.Space();
@@ -243,6 +260,9 @@ namespace NeuralTerrainGeneration
                     );
                     brushHeightmap.Apply();
 
+                    // Loads default brush mask if no other mask is loaded.
+                    LoadBrushMask();
+
                     GenerateMaskedBrushHeightmap();
                 }
 
@@ -272,15 +292,6 @@ namespace NeuralTerrainGeneration
                 "Height Multiplier", 
                 heightMultiplier
             );
-            upSamplerType = (UpSamplerType)EditorGUILayout.EnumPopup(
-                "UpSampler Type", 
-                upSamplerType
-            );
-            upSampleResolution = (UpSampleResolution)EditorGUILayout.EnumPopup(
-                "UpSample Resolution", 
-                upSampleResolution
-            );
-            CalculateUpSampledDimensions();
             CalculateBlendingRadii();
 
             fromScratchDiffusionSteps = EditorGUILayout.IntField(
@@ -555,6 +566,41 @@ namespace NeuralTerrainGeneration
             radius2 = upSampledWidth;
         }
 
+        // Returns true when model loaded succesfully, false otherwise.
+        private bool LoadModel()
+        {
+            if(modelAsset == null)
+            {
+                modelAsset = (NNModel)AssetDatabase.LoadAssetAtPath(
+                    fullModelPath, 
+                    typeof(NNModel)
+                );
+            }
+            if(modelAsset != null)
+            {
+                runtimeModel = ModelLoader.Load(modelAsset);
+            }
+            else
+            {
+                Debug.LogError("Model asset is null.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void LoadBrushMask()
+        {
+            if(brushMask == null)
+            {
+                Debug.Log("Loading brush mask.");
+                brushMask = (Texture2D)AssetDatabase.LoadAssetAtPath(
+                    fullBrushPath, 
+                    typeof(Texture2D)
+                );
+            }
+        }
+
         private float[] GenerateHeightmap(
             UpSampleResolution upSampleResolutionArg, 
             int diffusionSteps, 
@@ -564,13 +610,8 @@ namespace NeuralTerrainGeneration
         {
             if(runtimeModel == null)
             {
-                if(modelAsset != null)
+                if(!LoadModel())
                 {
-                    runtimeModel = ModelLoader.Load(modelAsset);
-                }
-                else
-                {
-                    Debug.LogError("Model asset is null.");
                     return null;
                 }
             }
