@@ -82,6 +82,11 @@ namespace NeuralTerrainGeneration
         private const string defaultBrushName = "square_brush_01.png";
         private const string fullBrushPath = brushFolder + defaultBrushName;
 
+        // Smoothing.
+        private bool smoothingEnabled = false;
+        private int kernelSize = 3;
+        private float sigma = 0.8f;
+
         public override string GetName()
         {
             return "Neural Terrain Generator";
@@ -152,7 +157,12 @@ namespace NeuralTerrainGeneration
 
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
         {
-            modelAsset = (NNModel)EditorGUILayout.ObjectField("Model Asset", modelAsset, typeof(NNModel), false);
+            modelAsset = (NNModel)EditorGUILayout.ObjectField(
+                "Model Asset", 
+                modelAsset, 
+                typeof(NNModel), 
+                false
+            );
             upSamplerType = (UpSamplerType)EditorGUILayout.EnumPopup(
                 "UpSampler Type", 
                 upSamplerType
@@ -162,6 +172,13 @@ namespace NeuralTerrainGeneration
                 upSampleResolution
             );
             CalculateUpSampledDimensions();
+
+            smoothingEnabled = EditorGUILayout.Toggle("Smoothing Enabled", smoothingEnabled);
+            if(smoothingEnabled)
+            {
+                kernelSize = EditorGUILayout.IntField("Kernel Size", kernelSize);
+                sigma = EditorGUILayout.FloatField("Sigma", sigma);
+            }
 
             EditorGUILayout.Space();
             EditorGUILayout.Space();
@@ -318,9 +335,20 @@ namespace NeuralTerrainGeneration
 
         private void FromSelectedGUI(Terrain terrain)
         {
-            fromSelectedDiffusionSteps = EditorGUILayout.IntField("From Selected Diffusion Steps", fromSelectedDiffusionSteps);
-            fromSelectedStartingStep = EditorGUILayout.IntField("From Selected Starting Step", fromSelectedStartingStep);
-            selectedTerrainWeight = EditorGUILayout.Slider("Selected Terrain Weight", selectedTerrainWeight, 0.0f, 1.0f);
+            fromSelectedDiffusionSteps = EditorGUILayout.IntField(
+                "From Selected Diffusion Steps", 
+                fromSelectedDiffusionSteps
+            );
+            fromSelectedStartingStep = EditorGUILayout.IntField(
+                "From Selected Starting Step", 
+                fromSelectedStartingStep
+            );
+            selectedTerrainWeight = EditorGUILayout.Slider(
+                "Selected Terrain Weight", 
+                selectedTerrainWeight, 
+                0.0f, 
+                1.0f
+            );
 
             if(GUILayout.Button("Generate Terrain From Selected"))
             {
@@ -662,6 +690,7 @@ namespace NeuralTerrainGeneration
                     }
                     else if(upSamplerType == UpSamplerType.Barracuda)
                     {
+                        // Upsample.
                         BarraUpSampler barraUpSampler = new BarraUpSampler(
                             modelOutputWidth,
                             modelOutputHeight,
@@ -670,9 +699,23 @@ namespace NeuralTerrainGeneration
                             WorkerFactory.Type.ComputePrecompiled
                         );
                         Tensor upSampledTensor = barraUpSampler.Execute(reverseDiffusionOutput);
-                        heightmap = upSampledTensor.ToReadOnlyArray();
+                        
+                        // Smooth.
+                        GaussianSmoother gaussianSmoother = new GaussianSmoother(
+                            kernelSize, 
+                            sigma,
+                            1,
+                            4, 
+                            upSampledWidth, 
+                            upSampledHeight
+                        );
+                        Tensor smoothedTensor = gaussianSmoother.Execute(upSampledTensor);
+                        
+                        heightmap = smoothedTensor.ToReadOnlyArray();
                         upSampledTensor.Dispose();
                         barraUpSampler.Dispose();
+                        smoothedTensor.Dispose();
+                        gaussianSmoother.Dispose();
                     }
                 }
                 else
