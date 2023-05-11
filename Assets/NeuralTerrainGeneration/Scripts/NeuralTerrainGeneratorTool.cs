@@ -86,7 +86,7 @@ namespace NeuralTerrainGeneration
         private bool smoothingEnabled = false;
         private int kernelSize = 3;
         private float sigma = 0.8f;
-        private int padding = 4;
+        //private int padding = 4;
 
         public override string GetName()
         {
@@ -179,7 +179,7 @@ namespace NeuralTerrainGeneration
             {
                 kernelSize = EditorGUILayout.IntField("Kernel Size", kernelSize);
                 sigma = EditorGUILayout.FloatField("Sigma", sigma);
-                padding = EditorGUILayout.IntField("Padding", padding);
+                //padding = EditorGUILayout.IntField("Padding", padding);
             }
 
             EditorGUILayout.Space();
@@ -709,7 +709,7 @@ namespace NeuralTerrainGeneration
                                 kernelSize, 
                                 sigma,
                                 1,
-                                padding, 
+                                kernelSize-1, 
                                 upSampledWidth, 
                                 upSampledHeight
                             );
