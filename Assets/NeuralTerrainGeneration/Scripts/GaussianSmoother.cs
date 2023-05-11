@@ -68,6 +68,7 @@ namespace NeuralTerrainGeneration
             Tensor kernelTensor = new Tensor(size, size, 1, 1);
             for(int i = 0; i < kernelTensor.length; i++)
             {
+                //kernelTensor[i] = 1;
                 int x = i % size;
                 int y = i / size;
                 float value = (float)(

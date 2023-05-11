@@ -86,6 +86,7 @@ namespace NeuralTerrainGeneration
         private bool smoothingEnabled = false;
         private int kernelSize = 3;
         private float sigma = 0.8f;
+        private int padding = 4;
 
         public override string GetName()
         {
@@ -178,6 +179,7 @@ namespace NeuralTerrainGeneration
             {
                 kernelSize = EditorGUILayout.IntField("Kernel Size", kernelSize);
                 sigma = EditorGUILayout.FloatField("Sigma", sigma);
+                padding = EditorGUILayout.IntField("Padding", padding);
             }
 
             EditorGUILayout.Space();
@@ -700,22 +702,29 @@ namespace NeuralTerrainGeneration
                         );
                         Tensor upSampledTensor = barraUpSampler.Execute(reverseDiffusionOutput);
                         
-                        // Smooth.
-                        GaussianSmoother gaussianSmoother = new GaussianSmoother(
-                            kernelSize, 
-                            sigma,
-                            1,
-                            4, 
-                            upSampledWidth, 
-                            upSampledHeight
-                        );
-                        Tensor smoothedTensor = gaussianSmoother.Execute(upSampledTensor);
+                        if(smoothingEnabled)
+                        {
+                            // Smooth.
+                            GaussianSmoother gaussianSmoother = new GaussianSmoother(
+                                kernelSize, 
+                                sigma,
+                                1,
+                                padding, 
+                                upSampledWidth, 
+                                upSampledHeight
+                            );
+                            Tensor smoothedTensor = gaussianSmoother.Execute(upSampledTensor);
+                            heightmap = smoothedTensor.ToReadOnlyArray();
+                            smoothedTensor.Dispose();
+                            gaussianSmoother.Dispose();
+                        }
+                        else
+                        {
+                            heightmap = upSampledTensor.ToReadOnlyArray();
+                        }
                         
-                        heightmap = smoothedTensor.ToReadOnlyArray();
                         upSampledTensor.Dispose();
                         barraUpSampler.Dispose();
-                        smoothedTensor.Dispose();
-                        gaussianSmoother.Dispose();
                     }
                 }
                 else
