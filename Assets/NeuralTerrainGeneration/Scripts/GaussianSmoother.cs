@@ -38,21 +38,22 @@ namespace NeuralTerrainGeneration
 
             ModelBuilder builder = new ModelBuilder();
             builder.Input(inputName, 1, inputHeight, inputWidth, 1);
-            object input = inputName;
 
+            // Padding.
+            Int32[] padArray = new Int32[] { pad, pad, 0, 0 };
+            Layer padLayer = builder.Pad2DReflect("Pad2D", inputName, padArray);
+
+            // Convolution.
             kernel = CreateKernel(kernelSize, sigma);
-            //Tensor bias = tensorMathHelper.PopulatedTensor(0, kernelSize, kernelSize);
             Tensor bias = new Tensor(1, 1, 1, 1);
             bias[0] = 0;
             Int32[] strideArray = new Int32[] { stride, stride };
-            //Int32[] padArray = new Int32[] { inputWidth, inputHeight, inputWidth, inputHeight };
-            Int32[] padArray = new Int32[] { pad, pad, 0, 0 };
-
+            Int32[] convPadArray = new Int32[] { 0, 0, 0, 0 };       
             Layer convLayer = builder.Conv2D(
                 "Conv2D", 
-                input, 
+                padLayer.name, 
                 strideArray, 
-                padArray, 
+                convPadArray,
                 kernel, 
                 bias
             );
