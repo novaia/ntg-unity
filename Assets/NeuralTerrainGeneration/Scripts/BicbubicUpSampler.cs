@@ -39,7 +39,7 @@ namespace NeuralTerrainGeneration
             return samples;
         }
 
-        public float[] BicubicUpSample(Tensor original, int factor)
+        public Tensor BicubicUpSample(Tensor original, int factor)
         {
             Tensor upSampledX = new Tensor(1, original.height, original.width * factor, 1);
             Tensor upSampled = new Tensor(1, original.height * factor, original.width * factor, 1);
@@ -131,10 +131,8 @@ namespace NeuralTerrainGeneration
                 }
             }
 
-            float[] upSampledArray = upSampled.ToReadOnlyArray();
             upSampledX.Dispose();
-            upSampled.Dispose();
-            return upSampledArray;
+            return upSampled;
         }
     }
 }

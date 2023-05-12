@@ -14,6 +14,7 @@ namespace NeuralTerrainGeneration
     public class NeuralTerrainGeneratorTool : TerrainPaintTool<NeuralTerrainGeneratorTool>
     {
         // General.
+        private WorkerFactory.Type workerType = WorkerFactory.Type.ComputePrecompiled;
         private TensorMathHelper tensorMathHelper = new TensorMathHelper();
         private TerrainHelper terrainHelper = new TerrainHelper();
         private int modelOutputWidth = 256;
@@ -86,7 +87,6 @@ namespace NeuralTerrainGeneration
         private bool smoothingEnabled = false;
         private int kernelSize = 3;
         private float sigma = 0.8f;
-        //private int padding = 4;
 
         public override string GetName()
         {
@@ -179,7 +179,6 @@ namespace NeuralTerrainGeneration
             {
                 kernelSize = EditorGUILayout.IntField("Kernel Size", kernelSize);
                 sigma = EditorGUILayout.FloatField("Sigma", sigma);
-                //padding = EditorGUILayout.IntField("Padding", padding);
             }
 
             EditorGUILayout.Space();
@@ -631,6 +630,56 @@ namespace NeuralTerrainGeneration
             }
         }
 
+        private Tensor UpSample(Tensor input, UpSampleResolution upSampleResolutionArg)
+        {
+            if(upSampleResolutionArg == UpSampleResolution._256)
+            {
+                return input;
+            }
+
+            int upSampleFactor = (int)upSampleResolutionArg;
+            Tensor output = new Tensor(1, upSampledHeight, upSampledWidth, 1);
+            if(upSamplerType == UpSamplerType.Barracuda)
+            {
+                BarraUpSampler barraUpSampler = new BarraUpSampler(
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    upSampleFactor, 
+                    true,
+                    WorkerFactory.Type.ComputePrecompiled
+                );
+                output = barraUpSampler.Execute(input);
+                barraUpSampler.Dispose();
+            }
+            else if(upSamplerType == UpSamplerType.Custom)
+            {
+                output = bicubicUpSampler.BicubicUpSample(input, upSampleFactor);
+            }
+
+            return output;
+        }
+
+        private Tensor Smooth(Tensor input)
+        {
+            if(!smoothingEnabled)
+            {
+                return input;
+            }
+
+            GaussianSmoother gaussianSmoother = new GaussianSmoother(
+                kernelSize, 
+                sigma,
+                1,
+                kernelSize-1, 
+                upSampledWidth, 
+                upSampledHeight
+            );
+            Tensor output = gaussianSmoother.Execute(input);
+            gaussianSmoother.Dispose();
+
+            return output;
+        }
+
         private float[] GenerateHeightmap(
             UpSampleResolution upSampleResolutionArg, 
             int diffusionSteps, 
@@ -647,30 +696,21 @@ namespace NeuralTerrainGeneration
             }
 
             float[] heightmap = new float[upSampledWidth * upSampledHeight];
-            using(
-                var worker = WorkerFactory.CreateWorker(
-                    WorkerFactory.Type.ComputePrecompiled, 
-                    runtimeModel
-                )
-            )
+            using(var worker = WorkerFactory.CreateWorker(workerType, runtimeModel))
             {
                 Tensor input = new Tensor(1, modelOutputWidth, modelOutputHeight, channels);
-                
-                if(customInput != null)
-                {
-                    input = customInput;
-                }
-                else
+                input = customInput;
+                if(customInput == null)
                 {
                     input = tensorMathHelper.RandomNormalTensor(
                         1, 
                         modelOutputWidth, 
                         modelOutputHeight, 
                         channels
-                    );
+                    ); 
                 }
 
-                Tensor reverseDiffusionOutput = diffuser.ReverseDiffusion(
+                Tensor diffusionOutput = diffuser.ReverseDiffusion(
                     worker, 
                     input, 
                     modelOutputWidth, 
@@ -678,62 +718,14 @@ namespace NeuralTerrainGeneration
                     diffusionSteps,
                     startingStep
                 );
-                
-                if(upSampleResolutionArg != UpSampleResolution._256)
-                {
-                    int upSampleFactor = (int)upSampleResolutionArg;
 
-                    if(upSamplerType == UpSamplerType.Custom)
-                    {
-                        heightmap = bicubicUpSampler.BicubicUpSample(
-                            reverseDiffusionOutput, 
-                            upSampleFactor
-                        );
-                    }
-                    else if(upSamplerType == UpSamplerType.Barracuda)
-                    {
-                        // Upsample.
-                        BarraUpSampler barraUpSampler = new BarraUpSampler(
-                            modelOutputWidth,
-                            modelOutputHeight,
-                            upSampleFactor, 
-                            true,
-                            WorkerFactory.Type.ComputePrecompiled
-                        );
-                        Tensor upSampledTensor = barraUpSampler.Execute(reverseDiffusionOutput);
-                        
-                        if(smoothingEnabled)
-                        {
-                            // Smooth.
-                            GaussianSmoother gaussianSmoother = new GaussianSmoother(
-                                kernelSize, 
-                                sigma,
-                                1,
-                                kernelSize-1, 
-                                upSampledWidth, 
-                                upSampledHeight
-                            );
-                            Tensor smoothedTensor = gaussianSmoother.Execute(upSampledTensor);
-                            heightmap = smoothedTensor.ToReadOnlyArray();
-                            smoothedTensor.Dispose();
-                            gaussianSmoother.Dispose();
-                        }
-                        else
-                        {
-                            heightmap = upSampledTensor.ToReadOnlyArray();
-                        }
-                        
-                        upSampledTensor.Dispose();
-                        barraUpSampler.Dispose();
-                    }
-                }
-                else
-                {
-                    heightmap = reverseDiffusionOutput.ToReadOnlyArray();
-                }
-
+                Tensor upSampled = UpSample(diffusionOutput, upSampleResolutionArg);
+                Tensor smoothed = Smooth(upSampled);
+                heightmap = smoothed.ToReadOnlyArray();
                 input.Dispose();
-                reverseDiffusionOutput.Dispose();
+                diffusionOutput.Dispose();
+                upSampled.Dispose();
+                smoothed.Dispose();
             }
 
             return heightmap;
