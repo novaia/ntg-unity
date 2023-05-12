@@ -40,11 +40,11 @@ namespace NeuralTerrainGeneration
         private const float maxSignalRate = 0.9f;
         private const float minSignalRate = 0.02f;
         private Diffuser diffuser = new Diffuser();
-        private int fromScratchDiffusionSteps = 20;
+        private int fromScratchDiffusionSteps = 10;
         private int fromSelectedDiffusionSteps = 20;
         private int fromSelectedStartingStep = 18;
         private float selectedTerrainWeight = 0.55f;
-        private int brushHeightmapDiffusionSteps = 20;
+        private int brushHeightmapDiffusionSteps = 10;
 
         // Upsampling.
         // Left: upsample resolution, right: upsample factor.
@@ -118,15 +118,6 @@ namespace NeuralTerrainGeneration
             );
             Tensor upSampledBrushMaskTensor = barraUpSampler.Execute(brushMaskTensor);
             // Consider smoothing upsample brush mask, otherwise it makes heightmap jagged.
-
-            /*
-            RenderTexture rt = BarracudaTextureUtils.TensorToRenderTexture(brushMaskTensor);
-            brushHeightmapUpSampled = new Texture2D(rt.width, rt.height);
-            RenderTexture.active = rt;
-            brushHeightmapUpSampled.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-            brushHeightmapUpSampled.Apply();
-            RenderTexture.active = null;
-            */
 
             brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
 
@@ -277,13 +268,15 @@ namespace NeuralTerrainGeneration
                     GenerateMaskedBrushHeightmap();
                 }
 
-                // Display brush heightmap and masked heightmap if they exist.
-                // Hiding these until I can downscale them for the inspector.
-                /*if(brushHeightmap != null)
+                GUIStyle style = new GUIStyle(GUI.skin.box);
+                style.fixedWidth = 256;
+                style.fixedHeight = 256;
+                if(brushHeightmap != null)
                 {
                     EditorGUILayout.LabelField("Brush Heightmap:");
-                    GUILayout.Box(brushHeightmap);
+                    GUILayout.Box(brushHeightmap, style);
                 }
+                /*
                 if(brushHeightmapMasked != null)
                 {
                     EditorGUILayout.LabelField("Masked Brush Heightmap:");
@@ -293,7 +286,8 @@ namespace NeuralTerrainGeneration
                 {
                     EditorGUILayout.LabelField("UpSampled Brush Heightmap:");
                     GUILayout.Box(brushHeightmapUpSampled);
-                }*/
+                }
+                */
             }
         }
 
