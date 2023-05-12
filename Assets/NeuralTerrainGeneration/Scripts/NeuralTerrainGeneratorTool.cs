@@ -114,9 +114,9 @@ namespace NeuralTerrainGeneration
                 modelOutputHeight,
                 upSampleFactor, 
                 true,
-                WorkerFactory.Type.ComputePrecompiled
+                workerType
             );
-            brushMaskTensor = barraUpSampler.Execute(brushMaskTensor);
+            Tensor upSampledBrushMaskTensor = barraUpSampler.Execute(brushMaskTensor);
             // Consider smoothing upsample brush mask, otherwise it makes heightmap jagged.
 
             /*
@@ -136,17 +136,17 @@ namespace NeuralTerrainGeneration
 
             for(int i = 0; i < brushHeightmapColors.Length; i++)
             {
-                Color brushMaskColor = new Color(brushMaskTensor[i], 0, 0, 1);
+                Color brushMaskColor = new Color(upSampledBrushMaskTensor[i], 0, 0, 1);
                 brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColor.r;
             }
 
             brushMaskTensor.Dispose();
+            upSampledBrushMaskTensor.Dispose();
             barraUpSampler.Dispose();
 
             brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
             brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
             brushHeightmapMasked.Apply();
-            Debug.Log(brushHeightmapMasked.width);
         }
 
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
