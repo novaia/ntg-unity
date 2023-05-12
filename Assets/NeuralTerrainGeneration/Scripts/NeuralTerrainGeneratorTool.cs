@@ -78,15 +78,14 @@ namespace NeuralTerrainGeneration
         //private Texture2D upSampledBrushMask;
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
-        private Texture2D brushHeightmapUpSampled;
         private const string brushFolder = "Assets/NeuralTerrainGeneration/BrushMasks/";
         private const string defaultBrushName = "square_brush_01.png";
         private const string fullBrushPath = brushFolder + defaultBrushName;
 
         // Smoothing.
         private bool smoothingEnabled = false;
-        private int kernelSize = 3;
-        private float sigma = 0.8f;
+        private int kernelSize = 12;
+        private float sigma = 6.0f;
 
         public override string GetName()
         {
@@ -118,34 +117,28 @@ namespace NeuralTerrainGeneration
                 WorkerFactory.Type.ComputePrecompiled
             );
             brushMaskTensor = barraUpSampler.Execute(brushMaskTensor);
+            // Consider smoothing upsample brush mask, otherwise it makes heightmap jagged.
 
+            /*
             RenderTexture rt = BarracudaTextureUtils.TensorToRenderTexture(brushMaskTensor);
             brushHeightmapUpSampled = new Texture2D(rt.width, rt.height);
             RenderTexture.active = rt;
             brushHeightmapUpSampled.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
             brushHeightmapUpSampled.Apply();
             RenderTexture.active = null;
-            
+            */
+
             brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
 
             Color[] brushHeightmapColors = brushHeightmap.GetPixels();
             Color[] brushMaskColors = brushMask.GetPixels();
             Color[] brushHeightmapMaskedColors = new Color[brushHeightmapColors.Length];
 
-            Debug.Log("brushHeightmapColors.Length: " + brushHeightmapColors.Length/256);
-            Debug.Log("brushMaskTensor.length: " + brushMaskTensor.length/256);
-
             for(int i = 0; i < brushHeightmapColors.Length; i++)
             {
                 Color brushMaskColor = new Color(brushMaskTensor[i], 0, 0, 1);
                 brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColor.r;
             }
-            
-            /*for(int i = 0; i < brushHeightmapColors.Length; i++)
-            {
-                brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColors[i].r;
-            }*/
-            
 
             brushMaskTensor.Dispose();
             barraUpSampler.Dispose();
