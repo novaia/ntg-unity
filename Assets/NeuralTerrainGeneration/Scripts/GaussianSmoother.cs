@@ -90,7 +90,9 @@ namespace NeuralTerrainGeneration
             }
 
             worker.Execute(inputTensor);
-            return worker.PeekOutput();
+            Tensor output = worker.PeekOutput();
+            output.TakeOwnership(); // Take ownership so tensor can outlive worker.
+            return output;
         }
 
         public void Dispose()
