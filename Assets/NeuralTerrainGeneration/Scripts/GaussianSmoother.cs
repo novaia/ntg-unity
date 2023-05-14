@@ -28,7 +28,8 @@ namespace NeuralTerrainGeneration
             int stride,
             int pad, 
             int inputWidth, 
-            int inputHeight
+            int inputHeight,
+            WorkerFactory.Type workerType
         )
         {
             this.KernelSize = kernelSize;
