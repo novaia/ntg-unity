@@ -148,6 +148,10 @@ namespace NeuralTerrainGeneration
                 typeof(NNModel), 
                 false
             );
+            workerType = (WorkerFactory.Type)EditorGUILayout.EnumPopup(
+                "Worker Type", 
+                workerType
+            );
             upSamplerType = (UpSamplerType)EditorGUILayout.EnumPopup(
                 "UpSampler Type", 
                 upSamplerType
@@ -633,7 +637,7 @@ namespace NeuralTerrainGeneration
                     modelOutputHeight,
                     upSampleFactor, 
                     true,
-                    WorkerFactory.Type.ComputePrecompiled
+                    workerType
                 );
                 output = barraUpSampler.Execute(input);
                 barraUpSampler.Dispose();
@@ -659,7 +663,8 @@ namespace NeuralTerrainGeneration
                 1,
                 kernelSize-1, 
                 upSampledWidth, 
-                upSampledHeight
+                upSampledHeight,
+                workerType
             );
             Tensor output = gaussianSmoother.Execute(input);
             gaussianSmoother.Dispose();
