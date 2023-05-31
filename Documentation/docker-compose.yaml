@@ -1,0 +1,5 @@
+services:
+  doc-generator:
+    build: .
+    volumes:
+      - .:/project
