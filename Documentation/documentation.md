@@ -60,6 +60,12 @@ The size of the kernel used to smooth the output of the model. It corresponds to
 ## Sigma
 The standard deviation of the Gaussian blur used to smooth the output of the model.
 
+## Random Seed
+Determines whether or not a random seed will be used when generating terrain.
+
+## Seed
+When random seed is enabled, this value is the seed that was used to generate the last terrain. Conversely, when random seed is disabled, this value is the seed that will be used to generate the next terrain.
+
 ## Enable Brush
 Reveals brush UI.
 
