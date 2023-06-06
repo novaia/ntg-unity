@@ -45,6 +45,8 @@ namespace NeuralTerrainGeneration
         private int fromSelectedStartingStep = 18;
         private float selectedTerrainWeight = 0.55f;
         private int brushHeightmapDiffusionSteps = 10;
+        private bool randomSeed = true;
+        private int seed = 0;
 
         // Upsampling.
         // Left: upsample resolution, right: upsample factor.
@@ -167,6 +169,17 @@ namespace NeuralTerrainGeneration
             {
                 kernelSize = EditorGUILayout.IntField("Kernel Size", kernelSize);
                 sigma = EditorGUILayout.FloatField("Sigma", sigma);
+            }
+
+            randomSeed = EditorGUILayout.Toggle("Random Seed", randomSeed);
+            if(!randomSeed)
+            {
+                seed = EditorGUILayout.IntField("Seed", seed);
+            }
+            else
+            {
+                // display seed as read only label
+                EditorGUILayout.LabelField("Seed", seed.ToString());
             }
 
             EditorGUILayout.Space();
@@ -687,6 +700,11 @@ namespace NeuralTerrainGeneration
                 }
             }
 
+            if(randomSeed == true)
+            {
+                seed = UnityEngine.Random.Range(0, 100000);
+            }
+
             float[] heightmap = new float[upSampledWidth * upSampledHeight];
             using(var worker = WorkerFactory.CreateWorker(workerType, runtimeModel))
             {
@@ -694,11 +712,12 @@ namespace NeuralTerrainGeneration
                 input = customInput;
                 if(customInput == null)
                 {
-                    input = tensorMathHelper.RandomNormalTensor(
+                    input = tensorMathHelper.PseudoRandomNormalTensor(
                         1, 
                         modelOutputWidth, 
                         modelOutputHeight, 
-                        channels
+                        channels,
+                        seed
                     ); 
                 }
 

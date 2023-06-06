@@ -28,6 +28,25 @@ namespace NeuralTerrainGeneration
             return tensor;
         }
 
+        public Tensor PseudoRandomNormalTensor(int batchSize, int width, int height, int channels, int seed)
+        {
+            Tensor tensor = new Tensor(batchSize, width, height, channels);
+            System.Random random = new System.Random(seed);
+            for(int i = 0; i < width * height; i++)
+            {
+                // Box-Muller transform.
+                // Reference: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+                double mean = 0.0f;
+                double stdDev = 1.0f;
+                double u1 = 1.0 - random.NextDouble();
+                double u2 = 1.0 - random.NextDouble();
+                double randomStdNormal = Math.Sqrt(-2.0f * Math.Log(u1)) * Math.Sin(2.0f * Math.PI * u2);
+                double randomNormal = mean + stdDev * randomStdNormal;
+                tensor[i] = (float)randomNormal;
+            }
+            return tensor;
+        }
+
         public Tensor AddTensor(Tensor tensor1, Tensor tensor2)
         {
             if(tensor1.length != tensor2.length)
