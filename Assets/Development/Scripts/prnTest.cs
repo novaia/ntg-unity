@@ -5,6 +5,7 @@ using System;
 
 public class prnTest : MonoBehaviour
 {
+    [Header("Random Number Generator")]
     [SerializeField] private int seed;
     [SerializeField] private bool randomSeed;
 
