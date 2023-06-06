@@ -144,6 +144,15 @@ namespace NeuralTerrainGeneration
 
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
         {
+            /*GUIStyle headerStyle = new GUIStyle();
+            //headerStyle.fontStyle = FontStyle.Bold;
+            headerStyle.fontSize = 14;
+            headerStyle.normal.textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
+
+            headerStyle = EditorStyles.largeLabel;*/
+            GUIStyle headerStyle = EditorStyles.boldLabel;
+
+            EditorGUILayout.LabelField("Backend", headerStyle);
             modelAsset = (NNModel)EditorGUILayout.ObjectField(
                 "Model Asset", 
                 modelAsset, 
@@ -154,6 +163,10 @@ namespace NeuralTerrainGeneration
                 "Worker Type", 
                 workerType
             );
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("UpSampling", headerStyle);
             upSamplerType = (UpSamplerType)EditorGUILayout.EnumPopup(
                 "UpSampler Type", 
                 upSamplerType
@@ -164,6 +177,9 @@ namespace NeuralTerrainGeneration
             );
             CalculateUpSampledDimensions();
 
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Smoothing", headerStyle);
             smoothingEnabled = EditorGUILayout.Toggle("Smoothing Enabled", smoothingEnabled);
             if(smoothingEnabled)
             {
@@ -171,6 +187,9 @@ namespace NeuralTerrainGeneration
                 sigma = EditorGUILayout.FloatField("Sigma", sigma);
             }
 
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Seeding", headerStyle);
             randomSeed = EditorGUILayout.Toggle("Random Seed", randomSeed);
             if(!randomSeed)
             {
