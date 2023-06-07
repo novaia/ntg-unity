@@ -40,11 +40,9 @@ namespace NeuralTerrainGeneration
         private const float maxSignalRate = 0.9f;
         private const float minSignalRate = 0.02f;
         private Diffuser diffuser = new Diffuser();
-        private int fromScratchDiffusionSteps = 10;
-        private int fromSelectedDiffusionSteps = 20;
+        private int samplingSteps = 10;
         private int fromSelectedStartingStep = 18;
         private float selectedTerrainWeight = 0.55f;
-        private int brushHeightmapDiffusionSteps = 10;
         private bool randomSeed = true;
         private int seed = 0;
 
@@ -144,12 +142,6 @@ namespace NeuralTerrainGeneration
 
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
         {
-            /*GUIStyle headerStyle = new GUIStyle();
-            //headerStyle.fontStyle = FontStyle.Bold;
-            headerStyle.fontSize = 14;
-            headerStyle.normal.textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
-
-            headerStyle = EditorStyles.largeLabel;*/
             GUIStyle headerStyle = EditorStyles.boldLabel;
 
             EditorGUILayout.LabelField("Backend", headerStyle);
@@ -170,9 +162,9 @@ namespace NeuralTerrainGeneration
                 "Height Multiplier", 
                 heightMultiplier
             );
-            fromScratchDiffusionSteps = EditorGUILayout.IntSlider(
-                "From Scratch Diffusion Steps", 
-                fromScratchDiffusionSteps,
+            samplingSteps = EditorGUILayout.IntSlider(
+                "Sampling Steps", 
+                samplingSteps,
                 5,
                 20
             );
@@ -266,20 +258,13 @@ namespace NeuralTerrainGeneration
                 stampMode = EditorGUILayout.Toggle("Stamp Mode", stampMode);
 
                 EditorGUILayout.Space();
-
-                // Diffusion controls.
-                brushHeightmapDiffusionSteps = EditorGUILayout.IntField(
-                    "Brush Diffusion Steps", 
-                    brushHeightmapDiffusionSteps
-                );
-
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
                     // Brush heightmap is not upsampled, so keep it at 256x256. No.
                     float[] brushHeightmapArray = GenerateHeightmap(
                         //UpSampleResolution._256,
                         upSampleResolution, 
-                        brushHeightmapDiffusionSteps
+                        samplingSteps
                     );
 
                     for(int i = 0; i < brushHeightmapArray.Length; i++)
@@ -346,7 +331,7 @@ namespace NeuralTerrainGeneration
             {
                 float[] heightmap = GenerateHeightmap(
                     upSampleResolution, 
-                    fromScratchDiffusionSteps
+                    samplingSteps
                 );
 
                 terrainHelper.SetTerrainHeights(
@@ -361,10 +346,6 @@ namespace NeuralTerrainGeneration
 
         private void FromSelectedGUI(Terrain terrain)
         {
-            fromSelectedDiffusionSteps = EditorGUILayout.IntField(
-                "From Selected Diffusion Steps", 
-                fromSelectedDiffusionSteps
-            );
             fromSelectedStartingStep = EditorGUILayout.IntField(
                 "From Selected Starting Step", 
                 fromSelectedStartingStep
@@ -418,7 +399,7 @@ namespace NeuralTerrainGeneration
 
                     float[] newHeightmap = GenerateHeightmap(
                         upSampleResolution, 
-                        fromSelectedDiffusionSteps, 
+                        samplingSteps, 
                         fromSelectedStartingStep, 
                         customInput
                     );
