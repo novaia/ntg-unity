@@ -85,6 +85,10 @@ namespace NeuralTerrainGeneration
         private int kernelSize = 12;
         private float sigma = 6.0f;
 
+        // Interpolation.
+        private int interpolationSeed1 = 0;
+        private int interpolationSeed2 = 20;
+
         public override string GetName()
         {
             return "Neural Terrain Generator";
@@ -216,6 +220,15 @@ namespace NeuralTerrainGeneration
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Blending", EditorStyles.boldLabel);
             BlendGUI(terrain);
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Interpolation", EditorStyles.boldLabel);
+            interpolationSeed1 = EditorGUILayout.IntField("Seed 1", interpolationSeed1);
+            interpolationSeed2 = EditorGUILayout.IntField("Seed 2", interpolationSeed2);
+            if(GUILayout.Button("Interpolate"))
+            {
+                //Interpolate(terrain);
+            }
         }
 
         private void BrushGUI()
