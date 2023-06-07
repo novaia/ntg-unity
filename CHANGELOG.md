@@ -1,6 +1,7 @@
 ## 1.4.0
 - Added category headers to UI
 - Rerranged UI
+- Consolidated all diffusion steps settings into one called samplingSteps
 
 ## 1.3.0
 - Switched to seed based generation
