@@ -9,6 +9,23 @@ namespace NeuralTerrainGeneration
 {
     public class TensorMathHelper
     {
+        public Tensor NormalizeTensor(Tensor tensor)
+        {
+            float magnitude = 0.0f;
+            for(int i = 0; i < tensor.length; i++)
+            {
+                magnitude += tensor[i] * tensor[i];
+            }
+            magnitude = Mathf.Sqrt(magnitude);
+
+            Tensor normalizedTensor = new Tensor(tensor.batch, tensor.height, tensor.width, tensor.channels);
+            for(int i = 0; i < tensor.length; i++)
+            {
+                normalizedTensor[i] = tensor[i] / magnitude;
+            }
+            return normalizedTensor;
+        }
+
         // Treats tensors as single column vectors and performs dot product.
         public float VectorDotProduct(Tensor tensor1, Tensor tensor2)
         {
@@ -29,6 +46,9 @@ namespace NeuralTerrainGeneration
         // Treats tensors as single column vectors and slerps.
         public Tensor VectorSlerp(Tensor tensor1, Tensor tensor2, float interpValue)
         {
+            Tensor normalizedTensor1 = NormalizeTensor(tensor1);
+            Tensor normalizedTensor2 = NormalizeTensor(tensor2);
+            
             float cosOmega = VectorDotProduct(tensor1, tensor2);
             // If the angle is greater than 90 degrees, negate 
             // one of the vectors to use the acute angle instead.
