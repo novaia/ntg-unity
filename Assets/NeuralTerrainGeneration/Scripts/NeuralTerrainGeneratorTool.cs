@@ -81,7 +81,7 @@ namespace NeuralTerrainGeneration
         private const string fullBrushPath = brushFolder + defaultBrushName;
 
         // Smoothing.
-        private bool smoothingEnabled = false;
+        private bool smoothingEnabled = true;
         private int kernelSize = 12;
         private float sigma = 6.0f;
 
@@ -200,7 +200,7 @@ namespace NeuralTerrainGeneration
             }
             else
             {
-                // display seed as read only label
+                // Display seed as read only label.
                 EditorGUILayout.LabelField("Seed", seed.ToString());
             }
 
@@ -260,9 +260,7 @@ namespace NeuralTerrainGeneration
                 EditorGUILayout.Space();
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
-                    // Brush heightmap is not upsampled, so keep it at 256x256. No.
                     float[] brushHeightmapArray = GenerateHeightmap(
-                        //UpSampleResolution._256,
                         upSampleResolution, 
                         samplingSteps
                     );
@@ -282,7 +280,6 @@ namespace NeuralTerrainGeneration
                         );
                     }
 
-                    // Dimensions equal to model output dimensions because there is no upsampling. No.
                     CalculateUpSampledDimensions();
                     brushHeightmap = new Texture2D(upSampledWidth, upSampledHeight);
                     brushHeightmap.SetPixels(
@@ -308,18 +305,6 @@ namespace NeuralTerrainGeneration
                     EditorGUILayout.LabelField("Brush Heightmap:");
                     GUILayout.Box(brushHeightmap, style);
                 }
-                /*
-                if(brushHeightmapMasked != null)
-                {
-                    EditorGUILayout.LabelField("Masked Brush Heightmap:");
-                    GUILayout.Box(brushHeightmapMasked);
-                }
-                if(brushHeightmapUpSampled != null)
-                {
-                    EditorGUILayout.LabelField("UpSampled Brush Heightmap:");
-                    GUILayout.Box(brushHeightmapUpSampled);
-                }
-                */
             }
         }
 
