@@ -66,10 +66,10 @@ namespace NeuralTerrainGeneration
         private bool brushesEnabled = false;
         private Texture2D brushTexture1;
         private Texture2D brushTexture2;
-        private float brushOpacity = 0.1f;
-        private float brushSize = 25f;
+        private float brushOpacity = 0.5f;
+        private float brushSize = 533f;
         private float brushRotation = 0f;
-        private float brushHeightOffset = 0.5f;
+        private float brushHeightOffset = 0.1f;
         private bool stampMode = true;
         private bool hasPainted = false;
         private Texture2D brushMask;
@@ -156,9 +156,11 @@ namespace NeuralTerrainGeneration
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("General", headerStyle);
-            heightMultiplier = EditorGUILayout.FloatField(
+            heightMultiplier = EditorGUILayout.Slider(
                 "Height Multiplier", 
-                heightMultiplier
+                heightMultiplier,
+                0.0f,
+                2.0f
             );
             samplingSteps = EditorGUILayout.IntSlider(
                 "Sampling Steps", 
@@ -204,6 +206,7 @@ namespace NeuralTerrainGeneration
 
             EditorGUILayout.Space();
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Brush", headerStyle);
             BrushGUI();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
