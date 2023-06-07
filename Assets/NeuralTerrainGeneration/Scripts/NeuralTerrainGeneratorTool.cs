@@ -85,6 +85,11 @@ namespace NeuralTerrainGeneration
         private int kernelSize = 12;
         private float sigma = 6.0f;
 
+        // Interpolation.
+        private int interpolationSeed1 = 0;
+        private int interpolationSeed2 = 20;
+        private float interpolationValue = 0.5f;
+
         public override string GetName()
         {
             return "Neural Terrain Generator";
@@ -216,6 +221,50 @@ namespace NeuralTerrainGeneration
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Blending", EditorStyles.boldLabel);
             BlendGUI(terrain);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Blending", EditorStyles.boldLabel);
+            BlendGUI(terrain);
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Interpolation", EditorStyles.boldLabel);
+            interpolationSeed1 = EditorGUILayout.IntField("Seed 1", interpolationSeed1);
+            interpolationSeed2 = EditorGUILayout.IntField("Seed 2", interpolationSeed2);
+            interpolationValue = EditorGUILayout.Slider("Interpolation Value", interpolationValue, 0.0f, 1.0f);
+            if(GUILayout.Button("Interpolate"))
+            {
+                Tensor inputTensor1 = tensorMathHelper.PseudoRandomNormalTensor(
+                    1,
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    channels,
+                    interpolationSeed1
+                );
+                Tensor inputTensor2 = tensorMathHelper.PseudoRandomNormalTensor(
+                    1,
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    channels,
+                    interpolationSeed2
+                );
+                Tensor interpolatedTensor = tensorMathHelper.VectorSlerp(
+                    inputTensor1,
+                    inputTensor2,
+                    interpolationValue
+                );
+                float[] interpolatedHeightmap = GenerateHeightmap(
+                    upSampleResolution, 
+                    samplingSteps,
+                    0,
+                    interpolatedTensor
+                );
+                terrainHelper.SetTerrainHeights(
+                    terrain, 
+                    interpolatedHeightmap, 
+                    upSampledWidth, 
+                    upSampledHeight, 
+                    heightMultiplier
+                );
+            }
         }
 
         private void BrushGUI()
