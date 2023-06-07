@@ -34,6 +34,12 @@ The backend that will run your chosen model:
 
 These will each give varying performance depending on your hardware. If you are unsure, try ComputePrecompiled first, and if that doesn't work very well, try CSharpBurst.
 
+## Height Multiplier
+Multiplier applied to heightmaps to scale them up or down.
+
+## Sampling Steps
+The number of reverse diffusion steps that will be used to generate heightmaps. Higher values will take longer to compute. 
+
 ## UpSampler Type
 The method used to upsample the output of the model:
 
@@ -90,29 +96,11 @@ Value subtracted from the brush heightmap. This is used to sink the brush into t
 ## Stamp Mode
 When this is enabled, the brush will be discretely stamped onto the terrain instead of continuously painted, in other words, you will only be able to place one brush stroke per click.
 
-## Brush Diffusion Steps
-The number of reverse diffusion steps that will be used to generate the brush heightmap. Higher values will take longer to compute. Recommended values are between 5 and 20.
-
 ## Generate Brush Heightmap
 Generates a brush heightmap using the chosen parameters.
 
-## Height Multiplier
-Multiplier applied to heightmaps to scale them up or down. Recommended values are between 0.1 and 1.0.
-
-## From Scratch Diffusion Steps
-The number of reverse diffusion steps that will be used to generate heightmaps from scratch. Higher values will take longer to compute. Recommended values are between 5 and 20.
-
 ## Generate Terrain From Scratch
 Generates a heightmap from scratch using the chosen parameters, and automatically applies it to the selected terrain.
-
-## From Selected Diffusion Steps
-The number of reverse diffusion steps that will be used to generate heightmaps from the selected terrain. Higher values will take longer to compute. Recommended values are between 5 and 20.
-
-## From Selected Starting Step
-The step at which the reverse diffusion will start when generating a heightmap from the selected terrain. It is recommended to set this value close to, but less than "From Selected Diffusion Steps."
-
-## Generate Terrain From Selected
-Generates a heightmap from the selected terrain using the chosen parameters, and automatically applies it to the selected terrain.
 
 ## Blend Function Start Value
 Controls the inner radius of the circular gradient used to blend neighboring terrains.
