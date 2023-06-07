@@ -41,8 +41,6 @@ namespace NeuralTerrainGeneration
         private const float minSignalRate = 0.02f;
         private Diffuser diffuser = new Diffuser();
         private int samplingSteps = 10;
-        private int fromSelectedStartingStep = 18;
-        private float selectedTerrainWeight = 0.55f;
         private bool randomSeed = true;
         private int seed = 0;
 
@@ -209,12 +207,11 @@ namespace NeuralTerrainGeneration
             BrushGUI();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Whole Tile Generation", EditorStyles.boldLabel);
             FromScratchGUI(terrain);
             EditorGUILayout.Space();
             EditorGUILayout.Space();
-            FromSelectedGUI(terrain);
-            EditorGUILayout.Space();
-            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Blending", EditorStyles.boldLabel);
             BlendGUI(terrain);
         }
 
@@ -341,78 +338,6 @@ namespace NeuralTerrainGeneration
                     upSampledHeight, 
                     heightMultiplier
                 );
-            }
-        }
-
-        private void FromSelectedGUI(Terrain terrain)
-        {
-            fromSelectedStartingStep = EditorGUILayout.IntField(
-                "From Selected Starting Step", 
-                fromSelectedStartingStep
-            );
-            selectedTerrainWeight = EditorGUILayout.Slider(
-                "Selected Terrain Weight", 
-                selectedTerrainWeight, 
-                0.0f, 
-                1.0f
-            );
-
-            if(GUILayout.Button("Generate Terrain From Selected"))
-            {
-                int terrainResolution = terrain.terrainData.heightmapResolution;
-                int downSampleFactor = 1;
-                bool validTerrainResolution = true;
-                switch(terrainResolution)
-                {
-                    case 257:
-                        downSampleFactor = 1;
-                        break;
-                    case 513:
-                        downSampleFactor = 2;
-                        break;
-                    case 1025:
-                        downSampleFactor = 4;
-                        break;
-                    case 2049:
-                        downSampleFactor = 8;
-                        break;
-                    case 4097:
-                        downSampleFactor = 16;
-                        break;
-                    default:
-                        Debug.LogError("Selected terrain resolution must be one of the following: 257, 513, 1025, 2049, or 4097.");
-                        validTerrainResolution = false;
-                        break;
-                }
-
-                if(validTerrainResolution)
-                {
-                    float[,] heightmapArray = terrain.terrainData.GetHeights(0, 0, terrainResolution, terrainResolution);
-                    Tensor heightmap = tensorMathHelper.TwoDimensionalArrayToTensor(heightmapArray);
-                    Tensor downSampledHeightmap = downSampler.DownSample(heightmap, downSampleFactor);
-                    Tensor scaledHeightmap = tensorMathHelper.ScaleTensor(downSampledHeightmap, selectedTerrainWeight);
-                    
-                    Tensor noise = tensorMathHelper.RandomNormalTensor(1, modelOutputHeight, modelOutputWidth, 1);
-                    Tensor scaledNoise = tensorMathHelper.ScaleTensor(noise, 1.0f - selectedTerrainWeight);
-
-                    Tensor customInput = tensorMathHelper.AddTensor(scaledHeightmap, scaledNoise);
-
-                    float[] newHeightmap = GenerateHeightmap(
-                        upSampleResolution, 
-                        samplingSteps, 
-                        fromSelectedStartingStep, 
-                        customInput
-                    );
-
-                    terrainHelper.SetTerrainHeights(terrain, newHeightmap, upSampledWidth, upSampledHeight, heightMultiplier);
-
-                    heightmap.Dispose();
-                    downSampledHeightmap.Dispose();
-                    scaledHeightmap.Dispose();
-                    noise.Dispose();
-                    scaledNoise.Dispose();
-                    customInput.Dispose();
-                }
             }
         }
 
