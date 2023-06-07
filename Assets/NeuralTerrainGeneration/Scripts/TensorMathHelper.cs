@@ -9,6 +9,63 @@ namespace NeuralTerrainGeneration
 {
     public class TensorMathHelper
     {
+        // Treats tensors as single column vectors and performs dot product.
+        public float VectorDotProduct(Tensor tensor1, Tensor tensor2)
+        {
+            if(tensor1.length != tensor2.length)
+            {
+                Debug.LogError("Tensors must be the same size.");
+                return 0.0f;
+            }
+
+            float dotProduct = 0.0f;
+            for(int i = 0; i < tensor1.length; i++)
+            {
+                dotProduct += tensor1[i] * tensor2[i];
+            }
+            return dotProduct;
+        }
+
+        // Treats tensors as single column vectors and slerps.
+        public Tensor VectorSlerp(Tensor tensor1, Tensor tensor2, float interpValue)
+        {
+            float cosOmega = VectorDotProduct(tensor1, tensor2);
+            // If the angle is greater than 90 degrees, negate 
+            // one of the vectors to use the acute angle instead.
+            if(cosOmega < 0.0f)
+            {
+                tensor2 = ScaleTensor(tensor2, -1.0f);
+                cosOmega = -cosOmega;
+            }
+
+            // If the angle is very small, use linear interpolation 
+            // instead to avoid numerical instability.
+            if(cosOmega > 0.9999f)
+            {
+                Tensor lerpedTensor = AddTensor(
+                    tensor1, 
+                    ScaleTensor(SubtractTensor(tensor2, tensor1), interpValue)
+                );
+                return lerpedTensor;
+            }
+
+            // Compute the sine of the angle between the vectors.
+            float sinOmega = Mathf.Sqrt(1 - cosOmega * cosOmega);
+            // Compute the angle between the vectors.
+            float omega = Mathf.Acos(cosOmega); 
+            // Compute the scale factor for the first vector,
+            float tensor1Scale = Mathf.Sin((1 - interpValue) * omega) / sinOmega;
+            // Compute the scale factor for the second vector.
+            float tensor2Scale = Mathf.Sin(interpValue * omega) / sinOmega;
+            // Compute the weighted sum of the two vectors.
+            Tensor weightedSum = AddTensor(
+                ScaleTensor(tensor1, tensor1Scale), 
+                ScaleTensor(tensor2, tensor2Scale)
+            );
+
+            return weightedSum;
+        }
+
         public Tensor RandomNormalTensor(int batchSize, int width, int height, int channels)
         {
             Tensor tensor = new Tensor(batchSize, width, height, channels);

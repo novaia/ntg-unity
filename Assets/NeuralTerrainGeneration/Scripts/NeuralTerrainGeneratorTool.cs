@@ -236,14 +236,14 @@ namespace NeuralTerrainGeneration
                     channels,
                     interpolationSeed1
                 );
-                /*Tensor inputTensor2 = tensorMathHelper.PseudoRandomNormalTensor(
+                Tensor inputTensor2 = tensorMathHelper.PseudoRandomNormalTensor(
                     1,
                     modelOutputWidth,
                     modelOutputHeight,
                     channels,
                     interpolationSeed2
                 );
-                Tensor interpolatedTensor = tensorMathHelper.ElementWiseLerp(
+                Tensor interpolatedTensor = tensorMathHelper.VectorSlerp(
                     inputTensor1,
                     inputTensor2,
                     interpolationValue
@@ -253,23 +253,6 @@ namespace NeuralTerrainGeneration
                     samplingSteps,
                     0,
                     interpolatedTensor
-                );*/
-                Tensor noise = tensorMathHelper.PseudoRandomNormalTensor(
-                    1,
-                    modelOutputWidth,
-                    modelOutputHeight,
-                    channels,
-                    UnityEngine.Random.Range(0, 100000)
-                );
-                Tensor addedTensor = tensorMathHelper.AddTensor(
-                    tensorMathHelper.ScaleTensor(inputTensor1, 1 - interpolationValue),
-                    tensorMathHelper.ScaleTensor(noise, interpolationValue)
-                );
-                float[] interpolatedHeightmap = GenerateHeightmap(
-                    upSampleResolution, 
-                    samplingSteps,
-                    0,
-                    addedTensor
                 );
                 terrainHelper.SetTerrainHeights(
                     terrain, 
@@ -731,6 +714,10 @@ namespace NeuralTerrainGeneration
                 upSampled.Dispose();
                 smoothed.Dispose();
             }
+
+            // TODO: I might have forgotten to denormalize values after reverse diffusion.
+            // Reference this to make sure it was done correctly:
+            // https://keras.io/examples/generative/ddim/
 
             return heightmap;
         }
