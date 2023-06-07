@@ -165,6 +165,19 @@ namespace NeuralTerrainGeneration
             );
 
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("General", headerStyle);
+            heightMultiplier = EditorGUILayout.FloatField(
+                "Height Multiplier", 
+                heightMultiplier
+            );
+            fromScratchDiffusionSteps = EditorGUILayout.IntSlider(
+                "From Scratch Diffusion Steps", 
+                fromScratchDiffusionSteps,
+                5,
+                20
+            );
+
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("UpSampling", headerStyle);
             upSamplerType = (UpSamplerType)EditorGUILayout.EnumPopup(
@@ -178,7 +191,6 @@ namespace NeuralTerrainGeneration
             CalculateUpSampledDimensions();
 
             EditorGUILayout.Space();
-            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Smoothing", headerStyle);
             smoothingEnabled = EditorGUILayout.Toggle("Smoothing Enabled", smoothingEnabled);
             if(smoothingEnabled)
@@ -187,7 +199,6 @@ namespace NeuralTerrainGeneration
                 sigma = EditorGUILayout.FloatField("Sigma", sigma);
             }
 
-            EditorGUILayout.Space();
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Seeding", headerStyle);
             randomSeed = EditorGUILayout.Toggle("Random Seed", randomSeed);
@@ -329,16 +340,7 @@ namespace NeuralTerrainGeneration
 
         private void FromScratchGUI(Terrain terrain)
         {
-            heightMultiplier = EditorGUILayout.FloatField(
-                "Height Multiplier", 
-                heightMultiplier
-            );
             CalculateBlendingRadii();
-
-            fromScratchDiffusionSteps = EditorGUILayout.IntField(
-                "From Scratch Diffusion Steps", 
-                fromScratchDiffusionSteps
-            );
 
             if(GUILayout.Button("Generate Terrain From Scratch"))
             {
