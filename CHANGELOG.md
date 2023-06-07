@@ -2,8 +2,9 @@
 - Added category headers to UI
 - Rerranged UI
 - Consolidated all diffusion steps settings into one called samplingSteps
-- Removed from existing terrain generation (it never really worked)
+- Removed from existing terrain generation
 - Switched height multiplier UI from float field to slider
+- Tweaked default settings
 
 ## 1.3.0
 - Switched to seed based generation
