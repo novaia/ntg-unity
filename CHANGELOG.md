@@ -2,6 +2,7 @@
 - Added category headers to UI
 - Rerranged UI
 - Consolidated all diffusion steps settings into one called samplingSteps
+- Removed from existing terrain generation (it never really worked)
 
 ## 1.3.0
 - Switched to seed based generation
