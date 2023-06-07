@@ -47,6 +47,22 @@ namespace NeuralTerrainGeneration
             return tensor;
         }
 
+        public Tensor ElementWiseLerp(Tensor tensor1, Tensor tensor2, float lerpValue)
+        {
+            if(tensor1.length != tensor2.length)
+            {
+                Debug.LogError("Tensors must be the same size.");
+                return null;
+            }
+
+            Tensor newTensor = new Tensor(tensor1.batch, tensor1.height, tensor1.width, tensor1.channels);
+            for(int i = 0; i < tensor1.length; i++)
+            {
+                newTensor[i] = Mathf.Lerp(tensor1[i], tensor2[i], lerpValue);
+            }
+            return newTensor;
+        }
+
         public Tensor AddTensor(Tensor tensor1, Tensor tensor2)
         {
             if(tensor1.length != tensor2.length)
