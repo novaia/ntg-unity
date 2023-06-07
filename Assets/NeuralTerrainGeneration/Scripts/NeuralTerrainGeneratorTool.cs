@@ -88,6 +88,7 @@ namespace NeuralTerrainGeneration
         // Interpolation.
         private int interpolationSeed1 = 0;
         private int interpolationSeed2 = 20;
+        private float interpolationValue = 0.5f;
 
         public override string GetName()
         {
@@ -225,9 +226,58 @@ namespace NeuralTerrainGeneration
             EditorGUILayout.LabelField("Interpolation", EditorStyles.boldLabel);
             interpolationSeed1 = EditorGUILayout.IntField("Seed 1", interpolationSeed1);
             interpolationSeed2 = EditorGUILayout.IntField("Seed 2", interpolationSeed2);
+            interpolationValue = EditorGUILayout.Slider("Interpolation Value", interpolationValue, 0.0f, 1.0f);
             if(GUILayout.Button("Interpolate"))
             {
-                //Interpolate(terrain);
+                Tensor inputTensor1 = tensorMathHelper.PseudoRandomNormalTensor(
+                    1,
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    channels,
+                    interpolationSeed1
+                );
+                /*Tensor inputTensor2 = tensorMathHelper.PseudoRandomNormalTensor(
+                    1,
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    channels,
+                    interpolationSeed2
+                );
+                Tensor interpolatedTensor = tensorMathHelper.ElementWiseLerp(
+                    inputTensor1,
+                    inputTensor2,
+                    interpolationValue
+                );
+                float[] interpolatedHeightmap = GenerateHeightmap(
+                    upSampleResolution, 
+                    samplingSteps,
+                    0,
+                    interpolatedTensor
+                );*/
+                Tensor noise = tensorMathHelper.PseudoRandomNormalTensor(
+                    1,
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    channels,
+                    UnityEngine.Random.Range(0, 100000)
+                );
+                Tensor addedTensor = tensorMathHelper.AddTensor(
+                    tensorMathHelper.ScaleTensor(inputTensor1, 1 - interpolationValue),
+                    tensorMathHelper.ScaleTensor(noise, interpolationValue)
+                );
+                float[] interpolatedHeightmap = GenerateHeightmap(
+                    upSampleResolution, 
+                    samplingSteps,
+                    0,
+                    addedTensor
+                );
+                terrainHelper.SetTerrainHeights(
+                    terrain, 
+                    interpolatedHeightmap, 
+                    upSampledWidth, 
+                    upSampledHeight, 
+                    heightMultiplier
+                );
             }
         }
 
