@@ -143,10 +143,9 @@ public class Interpolator : MonoBehaviour
                     upSampledHeight,
                     heightMultiplier
                 );
-
-                Debug.Log("CurrentStep: " + currentStep);
                 yield return new WaitForSeconds(2);
             }
+            Debug.Log("Done with seed " + currentSeedIndex);
         }
     }
 
