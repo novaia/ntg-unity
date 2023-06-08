@@ -221,8 +221,7 @@ MonoBehaviour:
   modelAsset: {fileID: 5022602860645237092, guid: d17c0e44daadad84aa3353f9f313f984, type: 3}
   kernelSize: 12
   sigma: 6
-  seeds: 0000000014000000
-  numInterpolationSteps: 10
+  seeds: 71f60000e4d9000012be0000e181000031cb000071f60000
   terrain: {fileID: 528681475}
 --- !u!1 &1094793266
 GameObject:
@@ -274,7 +273,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 10000
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -300,8 +299,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1094793266}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.15696168, y: -0.83630955, z: 0.40247932, w: 0.3375795}
+  m_LocalPosition: {x: 1113.9758, y: 1079.9242, z: 1126.6683}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
