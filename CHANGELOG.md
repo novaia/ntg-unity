@@ -1,7 +1,7 @@
 ## 1.4.0
 - Added category headers to UI
 - Rerranged UI
-- Consolidated all diffusion steps settings into one called samplingSteps
+- Consolidated all diffusion steps settings into one called sampling steps
 - Removed from existing terrain generation
 - Switched height multiplier UI from float field to slider
 - Tweaked default settings
