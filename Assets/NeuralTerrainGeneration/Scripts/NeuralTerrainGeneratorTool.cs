@@ -101,43 +101,6 @@ namespace NeuralTerrainGeneration
             LoadBrushMask();
         }
 
-        private void GenerateMaskedBrushHeightmap()
-        {
-            if(brushHeightmap == null || brushMask == null) { return; }
-
-            Tensor brushMaskTensor = new Tensor(brushMask, 1);
-            int upSampleFactor = (int)upSampleResolution;
-            BarraUpSampler barraUpSampler = new BarraUpSampler(
-                modelOutputWidth,
-                modelOutputHeight,
-                upSampleFactor, 
-                true,
-                workerType
-            );
-            Tensor upSampledBrushMaskTensor = barraUpSampler.Execute(brushMaskTensor);
-            // Consider smoothing upsample brush mask, otherwise it makes heightmap jagged.
-
-            brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
-
-            Color[] brushHeightmapColors = brushHeightmap.GetPixels();
-            Color[] brushMaskColors = brushMask.GetPixels();
-            Color[] brushHeightmapMaskedColors = new Color[brushHeightmapColors.Length];
-
-            for(int i = 0; i < brushHeightmapColors.Length; i++)
-            {
-                Color brushMaskColor = new Color(upSampledBrushMaskTensor[i], 0, 0, 1);
-                brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * brushMaskColor.r;
-            }
-
-            brushMaskTensor.Dispose();
-            upSampledBrushMaskTensor.Dispose();
-            barraUpSampler.Dispose();
-
-            brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
-            brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
-            brushHeightmapMasked.Apply();
-        }
-
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
         {
             GUIStyle headerStyle = EditorStyles.boldLabel;
@@ -263,41 +226,7 @@ namespace NeuralTerrainGeneration
                 EditorGUILayout.Space();
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
-                    float[] brushHeightmapArray = GenerateHeightmap(
-                        upSampleResolution, 
-                        samplingSteps
-                    );
-
-                    for(int i = 0; i < brushHeightmapArray.Length; i++)
-                    {
-                        brushHeightmapArray[i] -= brushHeightOffset;
-                    }
-
-                    Color[] colorBrushHeightmap = new Color[brushHeightmapArray.Length];
-                    for(int i = 0; i < brushHeightmapArray.Length; i++)
-                    {
-                        colorBrushHeightmap[i] = new Color(
-                            brushHeightmapArray[i], 
-                            brushHeightmapArray[i], 
-                            brushHeightmapArray[i]
-                        );
-                    }
-
-                    CalculateUpSampledDimensions();
-                    brushHeightmap = new Texture2D(upSampledWidth, upSampledHeight);
-                    brushHeightmap.SetPixels(
-                        0, 
-                        0, 
-                        upSampledWidth, 
-                        upSampledHeight, 
-                        colorBrushHeightmap
-                    );
-                    brushHeightmap.Apply();
-
-                    // Loads default brush mask if no other mask is loaded.
-                    LoadBrushMask();
-
-                    GenerateMaskedBrushHeightmap();
+                    GenerateBrushHeightmap();
                 }
 
                 GUIStyle style = new GUIStyle(GUI.skin.box);
@@ -309,6 +238,99 @@ namespace NeuralTerrainGeneration
                     GUILayout.Box(brushHeightmap, style);
                 }
             }
+        }
+
+        private void GenerateBrushHeightmap()
+        {
+            float[] brushHeightmapArray = GenerateHeightmap(
+                upSampleResolution, 
+                samplingSteps
+            );
+
+            for(int i = 0; i < brushHeightmapArray.Length; i++)
+            {
+                brushHeightmapArray[i] -= brushHeightOffset;
+            }
+
+            Color[] colorBrushHeightmap = new Color[brushHeightmapArray.Length];
+            for(int i = 0; i < brushHeightmapArray.Length; i++)
+            {
+                colorBrushHeightmap[i] = new Color(
+                    brushHeightmapArray[i] * heightMultiplier, 
+                    brushHeightmapArray[i] * heightMultiplier, 
+                    brushHeightmapArray[i] * heightMultiplier,
+                    1
+                );
+            }
+
+            CalculateUpSampledDimensions();
+            brushHeightmap = new Texture2D(upSampledWidth, upSampledHeight);
+            brushHeightmap.SetPixels(
+                0, 
+                0, 
+                upSampledWidth, 
+                upSampledHeight, 
+                colorBrushHeightmap
+            );
+            brushHeightmap.Apply();
+
+            // Loads default brush mask if no other mask is loaded.
+            LoadBrushMask();
+
+            GenerateMaskedBrushHeightmap();
+        }
+
+        private void GenerateMaskedBrushHeightmap()
+        {
+            if(brushHeightmap == null || brushMask == null) { return; }
+
+            Tensor brushMaskTensor = new Tensor(brushMask, 1);
+            int upSampleFactor = (int)upSampleResolution;
+            /*BarraUpSampler barraUpSampler = new BarraUpSampler(
+                modelOutputWidth,
+                modelOutputHeight,
+                upSampleFactor, 
+                true,
+                workerType
+            );
+            Tensor upSampledBrushMaskTensor = barraUpSampler.Execute(brushMaskTensor);*/
+            Tensor upsampledBrushMask = UpSample(brushMaskTensor, upSampleResolution);
+            Tensor smoothedBrushMask = upsampledBrushMask; //Smooth(upsampledBrushMask);
+            // Consider smoothing upsample brush mask, otherwise it makes heightmap jagged.
+
+            brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
+
+            Color[] brushHeightmapColors = brushHeightmap.GetPixels();
+            Color[] brushHeightmapMaskedColors = new Color[brushHeightmapColors.Length];
+
+            for(int i = 0; i < smoothedBrushMask.length; i++)
+            {
+                brushHeightmapMaskedColors[i] = brushHeightmapColors[i] * 0;
+            }
+
+            brushMaskTensor.Dispose();
+            upsampledBrushMask.Dispose();
+            smoothedBrushMask.Dispose();
+
+            brushHeightmapMasked = new Texture2D(brushHeightmap.width, brushHeightmap.height);
+            brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
+            brushHeightmapMasked.Apply();
+
+            brushHeightmapMasked = brushHeightmap;
+
+            /*Tensor secondPass = new Tensor(brushHeightmapMasked, 1);
+            Tensor secondPassSmoothed = Smooth(secondPass, true);
+            for(int i = 0; i < smoothedBrushMask.length; i++)
+            {
+                brushHeightmapMaskedColors[i] = new Color(
+                    secondPassSmoothed[i],
+                    secondPassSmoothed[i],
+                    secondPassSmoothed[i],
+                    1
+                );
+            }
+            brushHeightmapMasked.SetPixels(brushHeightmapMaskedColors);
+            brushHeightmapMasked.Apply();*/
         }
 
         private void FromScratchGUI(Terrain terrain)
@@ -581,9 +603,9 @@ namespace NeuralTerrainGeneration
             return output;
         }
 
-        private Tensor Smooth(Tensor input)
+        private Tensor Smooth(Tensor input, bool overSmooth = false)
         {
-            if(!smoothingEnabled)
+            if(!smoothingEnabled && !overSmooth)
             {
                 return input;
             }
