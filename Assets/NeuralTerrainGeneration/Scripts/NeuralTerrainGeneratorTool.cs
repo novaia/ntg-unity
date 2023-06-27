@@ -241,6 +241,7 @@ namespace NeuralTerrainGeneration
                         samplingSteps,
                         seed,
                         smoothingEnabled,
+                        brushHeightOffset,
                         brushMask,
                         barraUpSampler,
                         gaussianSmoother,
