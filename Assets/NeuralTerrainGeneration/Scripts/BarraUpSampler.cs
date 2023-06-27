@@ -6,6 +6,7 @@ using System;
 
 namespace NeuralTerrainGeneration
 {
+    [System.Serializable]
     public class BarraUpSampler
     {
         public int Factor { get; private set; }
