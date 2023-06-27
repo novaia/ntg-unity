@@ -6,6 +6,7 @@ using NeuralTerrainGeneration;
 
 namespace NeuralTerrainGeneration
 {
+    [System.Serializable]
     public class Diffuser
     {
         public bool IsDisposed { get; private set; }
@@ -116,7 +117,11 @@ namespace NeuralTerrainGeneration
                 Tensor noisyImages = nextNoisyImages;
 
                 float[] diffusionTimes = {1.0f - stepSize * step};
-                Tensor[] rates = DiffusionSchedule(diffusionTimes, minSignalRate, maxSignalRate);
+                Tensor[] rates = DiffusionSchedule(
+                    diffusionTimes, 
+                    minSignalRate, 
+                    maxSignalRate
+                );
                 Tensor noiseRates = rates[0];
                 Tensor signalRates = rates[1];
                 Tensor noiseRatesSquared = tensorMathHelper.RaiseTensorToPower(noiseRates, 2);
@@ -150,7 +155,11 @@ namespace NeuralTerrainGeneration
                     nextDiffusionTimes[i] = diffusionTimes[i] - stepSize;
                 }
 
-                Tensor[] nextRates = DiffusionSchedule(nextDiffusionTimes, minSignalRate, maxSignalRate);
+                Tensor[] nextRates = DiffusionSchedule(
+                    nextDiffusionTimes, 
+                    minSignalRate, 
+                    maxSignalRate
+                );
                 Tensor nextNoiseRates = nextRates[0];
                 Tensor nextSignalRates = nextRates[1];
 

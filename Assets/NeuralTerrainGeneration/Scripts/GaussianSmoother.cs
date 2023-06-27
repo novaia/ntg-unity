@@ -7,6 +7,7 @@ using System;
 
 namespace NeuralTerrainGeneration
 {
+    [System.Serializable]
     public class GaussianSmoother
     {
         public int KernelSize { get; private set; }
