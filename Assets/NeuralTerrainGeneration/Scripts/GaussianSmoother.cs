@@ -32,6 +32,28 @@ namespace NeuralTerrainGeneration
             WorkerFactory.Type workerType
         )
         {
+            InitializeSmoother(
+                kernelSize, 
+                sigma,
+                stride,
+                pad, 
+                inputWidth, 
+                inputHeight,
+                workerType  
+            );
+        }
+
+        private void InitializeSmoother(
+            int kernelSize, 
+            float sigma,
+            int stride,
+            int pad, 
+            int inputWidth, 
+            int inputHeight,
+            WorkerFactory.Type workerType
+        )
+        {
+            this.IsDisposed = false;
             this.KernelSize = kernelSize;
             this.Sigma = sigma;
             this.Stride = stride;
@@ -65,12 +87,46 @@ namespace NeuralTerrainGeneration
             worker = WorkerFactory.CreateWorker(WorkerType, model);
         }
 
+        public void UpdateSmoother(
+            int kernelSize, 
+            float sigma,
+            int stride,
+            int pad, 
+            int inputWidth, 
+            int inputHeight,
+            WorkerFactory.Type workerType
+        )
+        {
+            bool requiresUpdate = 
+                kernelSize != this.KernelSize ||
+                sigma != this.Sigma ||
+                stride != this.Stride ||
+                pad != this.Pad ||
+                inputWidth != this.InputWidth ||
+                inputHeight != this.InputHeight ||
+                workerType != this.WorkerType;
+
+            if(requiresUpdate)
+            {
+                kernel.Dispose();
+                worker.Dispose();
+                InitializeSmoother(
+                    kernelSize, 
+                    sigma,
+                    stride,
+                    pad, 
+                    inputWidth, 
+                    inputHeight,
+                    workerType
+                );
+            }
+        }
+
         public Tensor CreateKernel(int size, float sigma)
         {
             Tensor kernelTensor = new Tensor(size, size, 1, 1);
             for(int i = 0; i < kernelTensor.length; i++)
             {
-                //kernelTensor[i] = 1;
                 int x = i % size;
                 int y = i / size;
                 float value = (float)(
