@@ -81,7 +81,7 @@ namespace NeuralTerrainGeneration
             // Mask the base heightmap with given brush mask.
             for(int i = 0; i < maskedHeightmap.length; i++)
             {
-                maskedHeightmap[i] = baseHeightmap[i] * brushMaskTensor[i] * 2.0f;
+                maskedHeightmap[i] = baseHeightmap[i] * brushMaskTensor[i];
             }
 
             // UpSample.
@@ -110,7 +110,7 @@ namespace NeuralTerrainGeneration
                 // Multiplying by 2 is a hack to prevent the brush pixels
                 // from becoming too compressed and losing information
                 // which leads to staircasing.
-                float colorValue = finalHeightmap[i];
+                float colorValue = finalHeightmap[i] * 4.0f - 0.5f;
                 finalHeightmapColors[i] = new Color(
                     colorValue,
                     colorValue,
@@ -129,6 +129,9 @@ namespace NeuralTerrainGeneration
 
             baseHeightmap.Dispose();
             brushMaskTensor.Dispose();
+            maskedHeightmap.Dispose();
+            upSampled.Dispose();
+            finalHeightmap.Dispose();
             return finalHeightmapTexture;
         }
 

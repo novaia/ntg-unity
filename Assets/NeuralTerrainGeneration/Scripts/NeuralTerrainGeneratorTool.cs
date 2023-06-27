@@ -13,9 +13,6 @@ namespace NeuralTerrainGeneration
 {
     public class NeuralTerrainGeneratorTool : TerrainPaintTool<NeuralTerrainGeneratorTool>
     {
-        private SaveState saveState;
-        private const string saveStatePath = "Assets/NeuralTerrainGeneration/ScriptableObjects/SaveState.asset";
-
         // GUI.
         private GUIStyle headerStyle;
 
@@ -26,7 +23,6 @@ namespace NeuralTerrainGeneration
         private int modelOutputWidth = 256;
         private int modelOutputHeight = 256;
         private float heightMultiplier = 0.5f;
-        private int channels = 1;
         private const string modelFolder = "Assets/NeuralTerrainGeneration/NNModels/";
         private const string modelName = "pix_diffuser_epoch62.onnx";
         private const string fullModelPath = modelFolder + modelName;
@@ -44,7 +40,7 @@ namespace NeuralTerrainGeneration
         // Diffusion.
         private const float maxSignalRate = 0.9f;
         private const float minSignalRate = 0.02f;
-        private Diffuser diffuser;
+        private Diffuser diffuser = null;
         private int samplingSteps = 10;
         private bool randomSeed = true;
         private int seed = 0;
@@ -62,7 +58,7 @@ namespace NeuralTerrainGeneration
         private UpSampleResolution upSampleResolution = UpSampleResolution._512;
         private int upSampleFactor = 2;
         private BicbubicUpSampler bicubicUpSampler = new BicbubicUpSampler();
-        private BarraUpSampler barraUpSampler;
+        private BarraUpSampler barraUpSampler = null;
         private enum UpSamplerType { Barracuda, Custom };
         private UpSamplerType upSamplerType = UpSamplerType.Barracuda;
         private const bool bilinearUpSampling = true;
@@ -85,7 +81,7 @@ namespace NeuralTerrainGeneration
         private const string fullBrushPath = brushFolder + defaultBrushName;
 
         // Smoothing.
-        private GaussianSmoother gaussianSmoother;
+        private GaussianSmoother gaussianSmoother = null;
         private bool smoothingEnabled = true;
         private int kernelSize = 12;
         private float sigma = 6.0f;
@@ -106,96 +102,17 @@ namespace NeuralTerrainGeneration
         {
             LoadModel();
             LoadBrushMask();
-            LoadSaveState();
-            if(saveState == null)
-            {
-                Debug.Log("Save state is null.!@!@!@");
-            }
-            headerStyle = EditorStyles.boldLabel;
-            upSampleFactor = (int)upSampleResolution;
-            
-            if(saveState.S_BarraUpSampler == null)
-            {
-                saveState.S_BarraUpSampler = new BarraUpSampler(
-                    modelOutputWidth,
-                    modelOutputHeight,
-                    upSampleFactor,
-                    bilinearUpSampling,
-                    workerType
-                );
-            }
-
-            Debug.Log("Test");
-            if(saveState.S_BarraUpSampler == null)
-            {
-                Debug.Log("Barra up sampler is null.");
-            }
-
-            if(saveState.S_GaussianSmoother == null)
-            {
-                saveState.S_GaussianSmoother = new GaussianSmoother(
-                    kernelSize,
-                    sigma,
-                    stride,
-                    pad,
-                    modelOutputWidth * upSampleFactor,
-                    modelOutputHeight * upSampleFactor,
-                    workerType
-                );
-            }
-
-            if(saveState.S_Diffuser == null)
-            {
-                saveState.S_Diffuser = new Diffuser(workerType, runtimeModel);
-            }
+            InitalizeModules();
         }
 
-        private void UpdateModules()
+        public override void OnDisable()
         {
-            // If smoothing is NOT enabled then smoother is not used,
-            // so it doesn't need to be updated.
-            if(saveState == null)
-            {
-                Debug.Log("Save state is null.");
-            }
-
-            if(smoothingEnabled)
-            {
-                saveState.S_GaussianSmoother.UpdateSmoother(
-                    kernelSize,
-                    sigma,
-                    stride,
-                    pad,
-                    modelOutputWidth * upSampleFactor,
-                    modelOutputHeight * upSampleFactor,
-                    workerType
-                );
-            }
-
-            saveState.S_BarraUpSampler.UpdateUpSampler(
-                modelOutputWidth,
-                modelOutputHeight,
-                upSampleFactor,
-                bilinearUpSampling,
-                workerType
-            );
-
-            saveState.S_Diffuser.UpdateDiffuser(
-                workerType,
-                runtimeModel
-            );
-        }
-
-        private void RandomizeSeedIfRequired()
-        {
-            if(randomSeed)
-            {
-                seed = Random.Range(0, 1000000);
-            }
+            DisposeOfModules();
         }
 
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
         {
+            headerStyle = EditorStyles.boldLabel;
             GeneralGUI();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
@@ -334,14 +251,13 @@ namespace NeuralTerrainGeneration
                 GUIStyle style = new GUIStyle(GUI.skin.box);
                 style.fixedWidth = 256;
                 style.fixedHeight = 256;
-                if(brushHeightmap != null)
+                if(brushHeightmapMasked != null)
                 {
                     EditorGUILayout.LabelField("Brush Heightmap:");
-                    GUILayout.Box(brushHeightmap, style);
+                    GUILayout.Box(brushHeightmapMasked, style);
                 }
             }
         }
-
 
         private void FromScratchGUI(Terrain terrain)
         {
@@ -357,9 +273,9 @@ namespace NeuralTerrainGeneration
                     samplingSteps,
                     seed,
                     smoothingEnabled,
-                    saveState.S_BarraUpSampler,
-                    saveState.S_GaussianSmoother,
-                    saveState.S_Diffuser
+                    barraUpSampler,
+                    gaussianSmoother,
+                    diffuser
                 );
 
                 terrainHelper.SetTerrainHeights(
@@ -587,13 +503,90 @@ namespace NeuralTerrainGeneration
                 );
             }
         }
-    
-        private void LoadSaveState()
+
+        private void InitalizeModules()
         {
-            saveState = (SaveState)AssetDatabase.LoadAssetAtPath(
-                saveStatePath, 
-                typeof(SaveState)
+            gaussianSmoother = null;
+            barraUpSampler = null;
+            diffuser = null;
+        
+            gaussianSmoother = new GaussianSmoother(
+                kernelSize,
+                sigma,
+                stride,
+                pad,
+                modelOutputWidth * upSampleFactor,
+                modelOutputHeight * upSampleFactor,
+                workerType
             );
+
+            barraUpSampler = new BarraUpSampler(
+                modelOutputWidth,
+                modelOutputHeight,
+                upSampleFactor,
+                bilinearUpSampling,
+                workerType
+            );
+
+            diffuser = new Diffuser(workerType, runtimeModel);
+        }
+
+        private void UpdateModules()
+        {
+            // If smoothing is NOT enabled then smoother is not used,
+            // so it doesn't need to be updated.
+            if(smoothingEnabled)
+            {
+                gaussianSmoother.UpdateSmoother(
+                    kernelSize,
+                    sigma,
+                    stride,
+                    pad,
+                    modelOutputWidth * upSampleFactor,
+                    modelOutputHeight * upSampleFactor,
+                    workerType
+                );
+            }
+
+            barraUpSampler.UpdateUpSampler(
+                modelOutputWidth,
+                modelOutputHeight,
+                upSampleFactor,
+                bilinearUpSampling,
+                workerType
+            );
+        
+            diffuser.UpdateDiffuser(
+                workerType,
+                runtimeModel
+            );
+        }
+
+        private void DisposeOfModules()
+        {
+            if(gaussianSmoother != null) 
+            { 
+                gaussianSmoother.Dispose(); 
+                gaussianSmoother = null;
+            }
+            if(barraUpSampler != null) 
+            { 
+                barraUpSampler.Dispose(); 
+                barraUpSampler = null;
+            }
+            if(diffuser != null) 
+            { 
+                diffuser.Dispose(); 
+                diffuser = null;
+            }
+        }
+    
+        private void RandomizeSeedIfRequired()
+        {
+            if(randomSeed)
+            {
+                seed = Random.Range(0, 1000000);
+            }
         }
     }
 }

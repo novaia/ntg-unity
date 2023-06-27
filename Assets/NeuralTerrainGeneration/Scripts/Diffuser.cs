@@ -48,6 +48,7 @@ namespace NeuralTerrainGeneration
 
             if(requiresUpdate)
             {
+                Debug.Log("Diffuser update rewuitrd");
                 Dispose();
                 InitializeDiffuser(workerType, runtimeModel);
             }
