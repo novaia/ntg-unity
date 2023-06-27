@@ -8,7 +8,49 @@ namespace NeuralTerrainGeneration
 {
     public class Diffuser
     {
+        public bool IsDisposed { get; private set; }
+        public WorkerFactory.Type WorkerType { get; private set; }
+        public Model RuntimeModel { get; private set; }
+        private IWorker worker;
+
         private TensorMathHelper tensorMathHelper = new TensorMathHelper();
+
+        public Diffuser(
+            WorkerFactory.Type workerType, 
+            Model runtimeModel
+        )
+        {
+            InitializeDiffuser(
+                workerType, 
+                runtimeModel
+            );
+        }
+
+        private void InitializeDiffuser(
+            WorkerFactory.Type workerType, 
+            Model runtimeModel
+        )
+        {
+            this.WorkerType = workerType;
+            this.RuntimeModel = runtimeModel;
+            worker = WorkerFactory.CreateWorker(workerType, runtimeModel);
+        }
+
+        public void UpdateDiffuser(
+            WorkerFactory.Type workerType,
+            Model runtimeModel
+        )
+        {
+            bool requiresUpdate = 
+                workerType != this.WorkerType || 
+                runtimeModel != this.RuntimeModel;
+
+            if(requiresUpdate)
+            {
+                Dispose();
+                InitializeDiffuser(workerType, runtimeModel);
+            }
+        }
 
         private Tensor[] DiffusionSchedule(
             float[] diffusionTimes, 
@@ -48,7 +90,6 @@ namespace NeuralTerrainGeneration
         }
 
         public Tensor ReverseDiffusion(
-            IWorker worker,
             Tensor initialNoise, 
             int modelOutputWidth,
             int modelOutputHeight,
@@ -146,6 +187,41 @@ namespace NeuralTerrainGeneration
             nextNoisyImages.Dispose();
 
             return predictedImages;
+        }
+
+        public Tensor Execute(
+            Tensor input,
+            int modelOutputWidth,
+            int modelOutputHeight,
+            int diffusionSteps, 
+            int startingStep = 0
+        )
+        {
+            Tensor output = ReverseDiffusion(
+                input, 
+                modelOutputWidth, 
+                modelOutputHeight,
+                diffusionSteps,
+                startingStep
+            );
+
+            // TODO: I might have forgotten to denormalize values after reverse diffusion.
+            // Reference this to make sure it was done correctly:
+            // https://keras.io/examples/generative/ddim/
+
+            return output;
+        }
+
+        public void Dispose()
+        {
+            if(IsDisposed)
+            {
+                Debug.LogError("Worker is already disposed");
+                return;
+            }
+
+            worker.Dispose();
+            IsDisposed = true;
         }
     }
 }

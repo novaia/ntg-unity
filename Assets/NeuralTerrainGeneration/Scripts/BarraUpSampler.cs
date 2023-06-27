@@ -26,6 +26,24 @@ namespace NeuralTerrainGeneration
             WorkerFactory.Type workerType
         )
         {
+            InitializeUpSampler(
+                inputWidth, 
+                inputHeight, 
+                factor, 
+                bilinear, 
+                workerType 
+            );
+        }
+
+        private void InitializeUpSampler(
+            int inputWidth, 
+            int inputHeight, 
+            int factor, 
+            bool bilinear, 
+            WorkerFactory.Type workerType 
+        )
+        {
+            this.IsDisposed = false;
             this.Factor = factor;
             this.Bilinear = bilinear;
             this.InputWidth = inputWidth;
@@ -49,6 +67,33 @@ namespace NeuralTerrainGeneration
             Model model = builder.model;
 
             worker = WorkerFactory.CreateWorker(WorkerType, model);
+        }
+
+        public void UpdateUpSampler(
+            int inputWidth, 
+            int inputHeight, 
+            int factor, 
+            bool bilinear, 
+            WorkerFactory.Type workerType 
+        )
+        {
+            bool requiresUpdate = 
+                inputWidth != this.InputWidth || 
+                inputHeight != this.InputHeight || 
+                factor != this.Factor || 
+                bilinear != this.Bilinear || 
+                workerType != this.WorkerType;
+
+            if(requiresUpdate)
+            {
+                InitializeUpSampler(
+                    inputWidth, 
+                    inputHeight, 
+                    factor, 
+                    bilinear, 
+                    workerType 
+                );
+            }
         }
 
         public Tensor Execute(Tensor inputTensor)

@@ -19,8 +19,6 @@ namespace NeuralTerrainGeneration
         private TerrainHelper terrainHelper = new TerrainHelper();
         private int modelOutputWidth = 256;
         private int modelOutputHeight = 256;
-        private int upSampledWidth = 0;
-        private int upSampledHeight = 0;
         private float heightMultiplier = 0.5f;
         private int channels = 1;
         private const string modelFolder = "Assets/NeuralTerrainGeneration/NNModels/";
@@ -28,6 +26,7 @@ namespace NeuralTerrainGeneration
         private const string fullModelPath = modelFolder + modelName;
         private NNModel modelAsset;
         private Model runtimeModel;
+        private HeightmapGenerator heightmapGenerator = new HeightmapGenerator();
 
         // Blending.
         private float radius1 = 128.0f;
@@ -39,7 +38,7 @@ namespace NeuralTerrainGeneration
         // Diffusion.
         private const float maxSignalRate = 0.9f;
         private const float minSignalRate = 0.02f;
-        private Diffuser diffuser = new Diffuser();
+        private Diffuser diffuser;
         private int samplingSteps = 10;
         private bool randomSeed = true;
         private int seed = 0;
@@ -55,12 +54,12 @@ namespace NeuralTerrainGeneration
             _4096 = 16
         };
         private UpSampleResolution upSampleResolution = UpSampleResolution._512;
+        private int upSampleFactor = 2;
         private BicbubicUpSampler bicubicUpSampler = new BicbubicUpSampler();
+        private BarraUpSampler barraUpSampler;
         private enum UpSamplerType { Barracuda, Custom };
         private UpSamplerType upSamplerType = UpSamplerType.Barracuda;
-        
-        // Downsampling.
-        private DownSampler downSampler = new DownSampler();
+        private const bool bilinearUpSampling = true;
 
         // Brushes.
         private bool brushesEnabled = false;
@@ -73,7 +72,6 @@ namespace NeuralTerrainGeneration
         private bool stampMode = true;
         private bool hasPainted = false;
         private Texture2D brushMask;
-        //private Texture2D upSampledBrushMask;
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
         private const string brushFolder = "Assets/NeuralTerrainGeneration/BrushMasks/";
@@ -81,9 +79,12 @@ namespace NeuralTerrainGeneration
         private const string fullBrushPath = brushFolder + defaultBrushName;
 
         // Smoothing.
+        private GaussianSmoother gaussianSmoother;
         private bool smoothingEnabled = true;
         private int kernelSize = 12;
         private float sigma = 6.0f;
+        private int stride = 1;
+        private int pad = 11;
 
         public override string GetName()
         {
@@ -99,6 +100,25 @@ namespace NeuralTerrainGeneration
         {
             LoadModel();
             LoadBrushMask();
+            
+            upSampleFactor = (int)upSampleResolution;
+            barraUpSampler = new BarraUpSampler(
+                modelOutputWidth,
+                modelOutputHeight,
+                upSampleFactor,
+                bilinearUpSampling,
+                workerType
+            );
+            gaussianSmoother = new GaussianSmoother(
+                kernelSize,
+                sigma,
+                stride,
+                pad,
+                modelOutputWidth * upSampleFactor,
+                modelOutputHeight * upSampleFactor,
+                workerType
+            );
+            diffuser = new Diffuser(workerType, runtimeModel);
         }
 
         public override void OnInspectorGUI(Terrain terrain, IOnInspectorGUI editContext)
@@ -143,7 +163,7 @@ namespace NeuralTerrainGeneration
                 "UpSample Resolution", 
                 upSampleResolution
             );
-            CalculateUpSampledDimensions();
+            upSampleFactor = (int)upSampleResolution;
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Smoothing", headerStyle);
@@ -179,9 +199,6 @@ namespace NeuralTerrainGeneration
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Blending", EditorStyles.boldLabel);
             BlendGUI(terrain);
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Blending", EditorStyles.boldLabel);
-            BlendGUI(terrain);
         }
 
         private void BrushGUI()
@@ -212,7 +229,7 @@ namespace NeuralTerrainGeneration
                 if(tempBrushMask != brushMask)
                 {
                     brushMask = tempBrushMask;
-                    GenerateMaskedBrushHeightmap();
+
                 }
                 EditorGUILayout.Space();
 
@@ -226,7 +243,7 @@ namespace NeuralTerrainGeneration
                 EditorGUILayout.Space();
                 if(GUILayout.Button("Generate Brush Heighmap"))
                 {
-                    GenerateBrushHeightmap();
+
                 }
 
                 GUIStyle style = new GUIStyle(GUI.skin.box);
@@ -242,7 +259,7 @@ namespace NeuralTerrainGeneration
 
         private void GenerateBrushHeightmap()
         {
-            float[] brushHeightmapArray = GenerateHeightmap(
+            /*float[] brushHeightmapArray = GenerateHeightmap(
                 upSampleResolution, 
                 samplingSteps
             );
@@ -277,12 +294,12 @@ namespace NeuralTerrainGeneration
             // Loads default brush mask if no other mask is loaded.
             LoadBrushMask();
 
-            GenerateMaskedBrushHeightmap();
+            GenerateMaskedBrushHeightmap();*/
         }
 
         private void GenerateMaskedBrushHeightmap()
         {
-            if(brushHeightmap == null || brushMask == null) { return; }
+            /*if(brushHeightmap == null || brushMask == null) { return; }
 
             Tensor brushMaskTensor = new Tensor(brushMask, 1);
             int upSampleFactor = (int)upSampleResolution;
@@ -294,7 +311,7 @@ namespace NeuralTerrainGeneration
                 workerType
             );
             Tensor upSampledBrushMaskTensor = barraUpSampler.Execute(brushMaskTensor);*/
-            Tensor upsampledBrushMask = UpSample(brushMaskTensor, upSampleResolution);
+            /*Tensor upsampledBrushMask = UpSample(brushMaskTensor, upSampleResolution);
             Tensor smoothedBrushMask = upsampledBrushMask; //Smooth(upsampledBrushMask);
             // Consider smoothing upsample brush mask, otherwise it makes heightmap jagged.
 
@@ -317,7 +334,7 @@ namespace NeuralTerrainGeneration
             brushHeightmapMasked.Apply();
 
             brushHeightmapMasked = brushHeightmap;
-
+            */
             /*Tensor secondPass = new Tensor(brushHeightmapMasked, 1);
             Tensor secondPassSmoothed = Smooth(secondPass, true);
             for(int i = 0; i < smoothedBrushMask.length; i++)
@@ -336,19 +353,53 @@ namespace NeuralTerrainGeneration
         private void FromScratchGUI(Terrain terrain)
         {
             CalculateBlendingRadii();
-
             if(GUILayout.Button("Generate Terrain From Scratch"))
             {
-                float[] heightmap = GenerateHeightmap(
-                    upSampleResolution, 
-                    samplingSteps
+                if(randomSeed)
+                {
+                    seed = UnityEngine.Random.Range(0, 100000);
+                }
+
+                if(smoothingEnabled)
+                {
+                    gaussianSmoother.UpdateSmoother(
+                        kernelSize,
+                        sigma,
+                        stride,
+                        pad,
+                        modelOutputWidth * upSampleFactor,
+                        modelOutputHeight * upSampleFactor,
+                        workerType
+                    );
+                }
+                barraUpSampler.UpdateUpSampler(
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    upSampleFactor,
+                    bilinearUpSampling,
+                    workerType
+                );
+                diffuser.UpdateDiffuser(
+                    workerType,
+                    runtimeModel
+                );
+
+                float[] heightmap = heightmapGenerator.GenerateHeightmapFromScratch(
+                    modelOutputWidth,
+                    modelOutputHeight,
+                    samplingSteps,
+                    seed,
+                    smoothingEnabled,
+                    barraUpSampler,
+                    gaussianSmoother,
+                    diffuser
                 );
 
                 terrainHelper.SetTerrainHeights(
                     terrain, 
-                    heightmap, 
-                    upSampledWidth, 
-                    upSampledHeight, 
+                    heightmap,
+                    modelOutputWidth * upSampleFactor,
+                    modelOutputHeight * upSampleFactor,
                     heightMultiplier
                 );
             }
@@ -363,8 +414,8 @@ namespace NeuralTerrainGeneration
             {
                 neighborBlender.BlendAllNeighbors(
                     terrain, 
-                    upSampledWidth, 
-                    upSampledHeight, 
+                    modelOutputWidth * upSampleFactor, 
+                    modelOutputHeight * upSampleFactor, 
                     radius1, 
                     radius2, 
                     bValue, 
@@ -526,15 +577,9 @@ namespace NeuralTerrainGeneration
             }
         }
 
-        private void CalculateUpSampledDimensions()
-        {
-            int upSampleFactor = (int)upSampleResolution;
-            upSampledWidth = modelOutputWidth * upSampleFactor;
-            upSampledHeight = modelOutputHeight * upSampleFactor;
-        }
-
         private void CalculateBlendingRadii()
         {
+            int upSampledWidth = modelOutputWidth * upSampleFactor;
             radius1 = upSampledWidth / 2;
             radius2 = upSampledWidth;
         }
@@ -572,118 +617,6 @@ namespace NeuralTerrainGeneration
                     typeof(Texture2D)
                 );
             }
-        }
-
-        private Tensor UpSample(Tensor input, UpSampleResolution upSampleResolutionArg)
-        {
-            if(upSampleResolutionArg == UpSampleResolution._256)
-            {
-                return input;
-            }
-
-            int upSampleFactor = (int)upSampleResolutionArg;
-            Tensor output = new Tensor(1, upSampledHeight, upSampledWidth, 1);
-            if(upSamplerType == UpSamplerType.Barracuda)
-            {
-                BarraUpSampler barraUpSampler = new BarraUpSampler(
-                    modelOutputWidth,
-                    modelOutputHeight,
-                    upSampleFactor, 
-                    true,
-                    workerType
-                );
-                output = barraUpSampler.Execute(input);
-                barraUpSampler.Dispose();
-            }
-            else if(upSamplerType == UpSamplerType.Custom)
-            {
-                output = bicubicUpSampler.BicubicUpSample(input, upSampleFactor);
-            }
-
-            return output;
-        }
-
-        private Tensor Smooth(Tensor input, bool overSmooth = false)
-        {
-            if(!smoothingEnabled && !overSmooth)
-            {
-                return input;
-            }
-
-            GaussianSmoother gaussianSmoother = new GaussianSmoother(
-                kernelSize, 
-                sigma,
-                1,
-                kernelSize-1, 
-                upSampledWidth, 
-                upSampledHeight,
-                workerType
-            );
-            Tensor output = gaussianSmoother.Execute(input);
-            gaussianSmoother.Dispose();
-
-            return output;
-        }
-
-        private float[] GenerateHeightmap(
-            UpSampleResolution upSampleResolutionArg, 
-            int diffusionSteps, 
-            int startingStep = 0, 
-            Tensor customInput = null
-        )
-        {
-            if(runtimeModel == null)
-            {
-                if(!LoadModel())
-                {
-                    return null;
-                }
-            }
-
-            if(randomSeed == true)
-            {
-                seed = UnityEngine.Random.Range(0, 100000);
-            }
-
-            float[] heightmap = new float[upSampledWidth * upSampledHeight];
-            using(var worker = WorkerFactory.CreateWorker(workerType, runtimeModel))
-            {
-                Tensor input = new Tensor(1, modelOutputWidth, modelOutputHeight, channels);
-                input = customInput;
-                if(customInput == null)
-                {
-                    input = tensorMathHelper.PseudoRandomNormalTensor(
-                        1, 
-                        modelOutputWidth, 
-                        modelOutputHeight, 
-                        channels,
-                        seed
-                    ); 
-                }
-
-                Tensor diffusionOutput = diffuser.ReverseDiffusion(
-                    worker, 
-                    input, 
-                    modelOutputWidth, 
-                    modelOutputHeight,
-                    diffusionSteps,
-                    startingStep
-                );
-
-                Tensor upSampled = UpSample(diffusionOutput, upSampleResolutionArg);
-                Tensor smoothed = Smooth(upSampled);
-                heightmap = smoothed.ToReadOnlyArray();
-                input.Dispose();
-                diffusionOutput.Dispose();
-                upSampled.Dispose();
-                smoothed.Dispose();
-            }
-
-            // TODO: I might have forgotten to denormalize values after reverse diffusion.
-            // Reference this to make sure it was done correctly:
-            // https://keras.io/examples/generative/ddim/
-
-            return heightmap;
         }
     }
 }
