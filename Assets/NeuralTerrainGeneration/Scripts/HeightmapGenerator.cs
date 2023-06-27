@@ -56,6 +56,7 @@ namespace NeuralTerrainGeneration
             int samplingSteps,
             int seed,
             bool smooth,
+            float heightOffset,
             Texture2D brushMask,
             BarraUpSampler barraUpSampler,
             GaussianSmoother gaussianSmoother,
@@ -107,10 +108,10 @@ namespace NeuralTerrainGeneration
             Color[] finalHeightmapColors = new Color[finalHeightmap.length];
             for(int i = 0; i < finalHeightmap.length; i++)
             {
-                // Multiplying by 2 is a hack to prevent the brush pixels
+                // Multiplying by 4 is a hack to prevent the brush pixels
                 // from becoming too compressed and losing information
                 // which leads to staircasing.
-                float colorValue = finalHeightmap[i] * 4.0f - 0.5f;
+                float colorValue = finalHeightmap[i] * 4.0f - heightOffset;
                 finalHeightmapColors[i] = new Color(
                     colorValue,
                     colorValue,
