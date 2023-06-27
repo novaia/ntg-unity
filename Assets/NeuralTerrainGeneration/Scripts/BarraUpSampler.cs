@@ -87,6 +87,7 @@ namespace NeuralTerrainGeneration
 
             if(requiresUpdate)
             {
+                Dispose();
                 InitializeUpSampler(
                     inputWidth, 
                     inputHeight, 

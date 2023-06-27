@@ -59,6 +59,9 @@ namespace NeuralTerrainGeneration
             this.Sigma = sigma;
             this.Stride = stride;
             this.Pad = pad;
+            this.InputWidth = inputWidth;
+            this.InputHeight = inputHeight;
+            this.WorkerType = workerType;
 
             ModelBuilder builder = new ModelBuilder();
             builder.Input(inputName, 1, inputHeight, inputWidth, 1);
@@ -109,8 +112,7 @@ namespace NeuralTerrainGeneration
 
             if(requiresUpdate)
             {
-                kernel.Dispose();
-                worker.Dispose();
+                Dispose();
                 InitializeSmoother(
                     kernelSize, 
                     sigma,
