@@ -3,6 +3,8 @@ NTG Unity is a package for running Neural Terrain Generation models inside of Un
 
 The training code for NTG models can be found at [hayden-donnelly/ntg](https://github.com/hayden-donnelly/ntg).
 
+[NTG Unity Trailer](https://youtu.be/MZakPuXyquk)
+
 ## Setup
 1. Clone this repository
 2. Open the NTG project in Unity
