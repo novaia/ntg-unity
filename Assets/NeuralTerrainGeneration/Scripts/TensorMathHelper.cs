@@ -357,7 +357,7 @@ namespace NeuralTerrainGeneration
             {
                 for(int x = 0; x < left.width; x++)
                 {
-                    for(int y = 0; y < leftleftTensor.height; y++)
+                    for(int y = 0; y < left.height; y++)
                     {
                         for(int channel = 0; channel < left.channels; channel++)
                         {
