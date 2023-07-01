@@ -114,24 +114,24 @@ namespace NeuralTerrainGeneration
                 );
                 Tensor noiseRates = rates[0];
                 Tensor signalRates = rates[1];
-                Tensor noiseRatesSquared = tensorMathHelper.RaiseTensorToPower(noiseRates, 2);
+                Tensor noiseRatesSquared = tensorMathHelper.Pow(noiseRates, 2);
                 
                 worker.Execute(PackageInputs(noisyImages, noiseRatesSquared));
                 Tensor predictedNoises = worker.PeekOutput();
 
                 // Calculate predicted images.
                 // predictedNoises * noiseRate
-                Tensor scaledPredictedNoises = tensorMathHelper.ScaleTensorBatches(
+                Tensor scaledPredictedNoises = tensorMathHelper.ScaleBatches(
                     predictedNoises, noiseRates
                 );
 
                 // noisyImages - predictedNoises * noiseRate
-                Tensor difference = tensorMathHelper.SubtractTensor(
+                Tensor difference = tensorMathHelper.Sub(
                     noisyImages, scaledPredictedNoises
                 );
 
                 // (noisyImages - predictedNoises * noiseRate) / signalRate
-                predictedImages = tensorMathHelper.ScaleTensorBatches(
+                predictedImages = tensorMathHelper.ScaleBatches(
                     difference, signalRates, true
                 );
 
@@ -152,17 +152,17 @@ namespace NeuralTerrainGeneration
                 Tensor nextSignalRates = nextRates[1];
 
                 // predictedImages * nextSignalRate
-                Tensor scaledPredictedImages = tensorMathHelper.ScaleTensorBatches(
+                Tensor scaledPredictedImages = tensorMathHelper.ScaleBatches(
                     predictedImages, nextSignalRates
                 );
 
                 // predictedNoises * nextNoiseRate
-                Tensor scaledPredictedNoises2 = tensorMathHelper.ScaleTensorBatches(
+                Tensor scaledPredictedNoises2 = tensorMathHelper.ScaleBatches(
                     predictedNoises, nextNoiseRates
                 );
 
                 // predictedImages * nextSignalRate + predictedNoises * nextNoiseRate
-                nextNoisyImages = tensorMathHelper.AddTensor(
+                nextNoisyImages = tensorMathHelper.Add(
                     scaledPredictedImages, scaledPredictedNoises2
                 );
                 

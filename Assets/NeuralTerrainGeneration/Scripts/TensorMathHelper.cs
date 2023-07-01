@@ -56,7 +56,7 @@ namespace NeuralTerrainGeneration
             // one of the vectors to use the acute angle instead.
             if(cosOmega < 0.0f)
             {
-                tensor2 = ScaleTensor(tensor2, -1.0f);
+                tensor2 = Scale(tensor2, -1.0f);
                 cosOmega = -cosOmega;
             }
 
@@ -64,9 +64,9 @@ namespace NeuralTerrainGeneration
             // instead to avoid numerical instability.
             if(cosOmega > 0.9999f)
             {
-                Tensor lerpedTensor = AddTensor(
+                Tensor lerpedTensor = Add(
                     tensor1, 
-                    ScaleTensor(SubtractTensor(tensor2, tensor1), interpValue)
+                    Scale(Sub(tensor2, tensor1), interpValue)
                 );
                 return lerpedTensor;
             }
@@ -80,9 +80,9 @@ namespace NeuralTerrainGeneration
             // Compute the scale factor for the second vector.
             float tensor2Scale = Mathf.Sin(interpValue * omega) / sinOmega;
             // Compute the weighted sum of the two vectors.
-            Tensor weightedSum = AddTensor(
-                ScaleTensor(tensor1, tensor1Scale), 
-                ScaleTensor(tensor2, tensor2Scale)
+            Tensor weightedSum = Add(
+                Scale(tensor1, tensor1Scale), 
+                Scale(tensor2, tensor2Scale)
             );
 
             return weightedSum;
@@ -148,7 +148,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor AddTensor(Tensor tensor1, Tensor tensor2)
+        public Tensor Add(Tensor tensor1, Tensor tensor2)
         {
             if(tensor1.length != tensor2.length)
             {
@@ -166,7 +166,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor ScaleTensorBatches(
+        public Tensor ScaleBatches(
             Tensor tensor, Tensor scalars, bool inverseScalars = false
         )
         {
@@ -197,7 +197,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor ScaleTensor(Tensor tensor, float scalar)
+        public Tensor Scale(Tensor tensor, float scalar)
         {
             Tensor newTensor = new Tensor(
                 tensor.batch, tensor.width, tensor.height, tensor.channels
@@ -209,7 +209,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor SubtractTensor(Tensor leftTensor, Tensor rightTensor)
+        public Tensor Sub(Tensor leftTensor, Tensor rightTensor)
         {
             if(leftTensor.length != rightTensor.length)
             {
@@ -234,7 +234,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor RaiseTensorToPower(Tensor tensor, int power)
+        public Tensor Pow(Tensor tensor, int power)
         {
             Tensor newTensor = new Tensor(
                 tensor.batch, tensor.width, tensor.height, tensor.channels
@@ -246,7 +246,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor GradientTensor(
+        public Tensor Gradient(
             float leftValue, 
             float rightValue, 
             float topValue, 
@@ -270,7 +270,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor MultiplyTensors(Tensor left, Tensor right)
+        public Tensor Mul(Tensor left, Tensor right)
         {
             if(left.length != right.length)
             {
@@ -286,7 +286,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor TwoDimensionalArrayToTensor(float[,] array)
+        public Tensor TwoDimArrToTensor(float[,] array)
         {
             int width = array.GetLength(0);
             int height = array.GetLength(1);
@@ -301,7 +301,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor MirrorTensor(Tensor tensor, bool mirrorX, bool mirrorY)
+        public Tensor Mirror(Tensor tensor, bool mirrorX, bool mirrorY)
         {
             Tensor newTensor = new Tensor(
                 tensor.batch, tensor.width, tensor.height, tensor.channels
@@ -337,7 +337,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor ConcatenateTenors(Tensor left, Tensor right)
+        public Tensor Concat(Tensor left, Tensor right)
         {
             bool shapesMatch = 
                 left.batch == right.batch && 
@@ -380,7 +380,7 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor SplitTensor(Tensor tensor)
+        public Tensor Split(Tensor tensor)
         {
             if(tensor.width % 2 != 0)
             {
@@ -407,17 +407,17 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor PopulatedTensor(float element, int width, int height)
+        public Tensor Populated(float element, int width, int height)
         {
-            Tensor populatedTensor = new Tensor(1, width, height, 1);
+            Tensor populated = new Tensor(1, width, height, 1);
             for(int x = 0; x < width; x++)
             {
                 for(int y = 0; y < height; y ++)
                 {
-                    populatedTensor[0, x, y, 0] = element;
+                    populated[0, x, y, 0] = element;
                 }
             }
-            return populatedTensor;
+            return populated;
         }
     }
 }
