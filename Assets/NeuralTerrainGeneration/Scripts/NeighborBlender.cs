@@ -34,21 +34,16 @@ namespace NeuralTerrainGeneration
 
             if(keepNeighborHeights)
             {
-                float[,] neighborHeightmapArray = neighbor.terrainData.GetHeights(
-                    0, 0, terrainWidth, terrainHeight
-                );
-                Tensor neighborHeightmap = tensorMathHelper.TwoDimensionalArrayToTensor(
-                    neighborHeightmapArray
-                );
-                Tensor OnesTensor = tensorMathHelper.PopulatedTensor(
-                    1.0f, terrainWidth, terrainHeight
-                );
-                Tensor inverseLocalGradient = tensorMathHelper.SubtractTensor(
-                    OnesTensor, localGradient
-                );
-                Tensor scaledNeighbor = tensorMathHelper.MultiplyTensors(
-                    inverseLocalGradient, neighborHeightmap
-                );
+                float[,] neighborHeightmapArray = 
+                    neighbor.terrainData.GetHeights(0, 0, terrainWidth, terrainHeight);
+                Tensor neighborHeightmap = 
+                    tensorMathHelper.TwoDimensionalArrayToTensor(neighborHeightmapArray);
+                Tensor OnesTensor = 
+                    tensorMathHelper.PopulatedTensor(1.0f, terrainWidth, terrainHeight);
+                Tensor inverseLocalGradient = 
+                    tensorMathHelper.SubtractTensor(OnesTensor, localGradient);
+                Tensor scaledNeighbor = 
+                    tensorMathHelper.MultiplyTensors(inverseLocalGradient, neighborHeightmap);
                 Tensor blended = tensorMathHelper.AddTensor(scaledMirror, scaledNeighbor);
 
                 terrainHelper.SetTerrainHeights(
@@ -131,63 +126,35 @@ namespace NeuralTerrainGeneration
 
         public void ClampToNeighbors(
             Terrain terrain, 
-            Terrain leftNeighbor, 
-            Terrain rightNeighbor, 
-            Terrain topNeighbor, 
-            Terrain bottomNeighbor, 
-            int terrainWidth, 
-            int terrainHeight
+            Terrain left, 
+            Terrain right, 
+            Terrain top, 
+            Terrain bottom, 
+            int width, 
+            int height
         )
         {
             float[,] heightmap = 
-                terrain.terrainData.GetHeights(0, 0, terrainWidth, terrainWidth);
+                terrain.terrainData.GetHeights(0, 0, width, width);
 
             // Clamp to left neighbor.
             ClampToSingleNeighbor(
-                terrain,
-                heightmap, 
-                leftNeighbor, 
-                0, 
-                terrainWidth - 1, 
-                true, 
-                terrainWidth, 
-                terrainHeight
+                terrain, heightmap, left, 0, width-1, true, width, height
             );
 
             // Clamp to right neighbor.
             ClampToSingleNeighbor(
-                terrain,
-                heightmap, 
-                rightNeighbor, 
-                terrainWidth - 1, 
-                0, 
-                true, 
-                terrainWidth, 
-                terrainHeight
+                terrain, heightmap, right, width-1, 0, true, width, height
             );
 
             // Clamp to top neighbor.
             ClampToSingleNeighbor(
-                terrain,
-                heightmap, 
-                topNeighbor, 
-                terrainHeight - 1, 
-                0, 
-                false, 
-                terrainWidth, 
-                terrainHeight
+                terrain, heightmap, top, height-1, 0, false, width, height
             );
 
             // Clamp to bottom neighbor.
             ClampToSingleNeighbor(
-                terrain,
-                heightmap, 
-                bottomNeighbor, 
-                0, 
-                terrainHeight - 1, 
-                false, 
-                terrainWidth, 
-                terrainHeight
+                terrain, heightmap, bottom, 0, height-1, false, width, height
             );
 
             terrain.terrainData.SetHeights(0, 0, heightmap);
@@ -195,8 +162,8 @@ namespace NeuralTerrainGeneration
 
         public void BlendAllNeighbors(
             Terrain terrain, 
-            int terrainWidth, 
-            int terrainHeight, 
+            int width, 
+            int height, 
             float radius1, 
             float radius2, 
             float bValue,
@@ -205,7 +172,7 @@ namespace NeuralTerrainGeneration
         {
             TensorMathHelper tensorMathHelper = new TensorMathHelper();
             float[,] heightmap = 
-                terrain.terrainData.GetHeights(0, 0, terrainWidth, terrainHeight);
+                terrain.terrainData.GetHeights(0, 0, width, height);
             Tensor heightmapTensor = 
                 tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
             Tensor horizontalMirror = 
@@ -215,11 +182,11 @@ namespace NeuralTerrainGeneration
             Tensor bothMirror = 
                 tensorMathHelper.MirrorTensor(heightmapTensor, true, true);
 
-            Tensor gradient = new Tensor(1, terrainWidth * 3, terrainHeight * 3, 1);
+            Tensor gradient = new Tensor(1, width * 3, height * 3, 1);
             Vector2 center = new Vector2(radius1 + radius2, radius1 + radius2);
-            for(int x = 0; x < terrainWidth * 3; x++)
+            for(int x = 0; x < width * 3; x++)
             {
-                for(int y = 0; y < terrainHeight * 3; y++)
+                for(int y = 0; y < height * 3; y++)
                 {
                     float distance = Vector2.Distance(new Vector2(x, y), center);
                     if(distance < radius1)
@@ -241,171 +208,171 @@ namespace NeuralTerrainGeneration
                 }
             }
             
-            Terrain topLeftNeighbor = null;
-            Terrain bottomLeftNeighbor = null;
-            Terrain topRightNeighbor = null;
-            Terrain bottomRightNeighbor = null;
+            Terrain topLeft = null;
+            Terrain bottomLeft = null;
+            Terrain topRight = null;
+            Terrain bottomRight = null;
 
             // Split gradient in 8 parts.
-            Terrain leftNeighbor = terrain.leftNeighbor;
-            if(leftNeighbor != null)
+            Terrain left = terrain.leftNeighbor;
+            if(left != null)
             {
                 BlendSingleNeighbor(
-                    leftNeighbor, 
+                    left, 
                     horizontalMirror, 
                     gradient, 
                     0, 
-                    terrainHeight,
-                    terrainWidth,
-                    terrainHeight,
+                    height,
+                    width,
+                    height,
                     keepNeighborHeights
                 );
 
-                topLeftNeighbor = leftNeighbor.topNeighbor;
-                bottomLeftNeighbor = leftNeighbor.bottomNeighbor;
+                topLeft = left.topNeighbor;
+                bottomLeft = left.bottomNeighbor;
             }
 
-            Terrain rightNeighbor = terrain.rightNeighbor;
-            if(rightNeighbor != null)
+            Terrain right = terrain.rightNeighbor;
+            if(right != null)
             {
                 BlendSingleNeighbor(
-                    rightNeighbor, 
+                    right, 
                     horizontalMirror, 
                     gradient, 
-                    terrainWidth * 2, 
-                    terrainHeight, 
-                    terrainWidth, 
-                    terrainHeight,
+                    width * 2, 
+                    height, 
+                    width, 
+                    height,
                     keepNeighborHeights
                 );
 
-                topRightNeighbor = rightNeighbor.topNeighbor;
-                bottomRightNeighbor = rightNeighbor.bottomNeighbor;
+                topRight = right.topNeighbor;
+                bottomRight = right.bottomNeighbor;
             }
 
-            Terrain topNeighbor = terrain.topNeighbor;
-            if(topNeighbor != null)
+            Terrain top = terrain.topNeighbor;
+            if(top != null)
             {
                 BlendSingleNeighbor(
-                    topNeighbor, 
+                    top, 
                     verticalMirror, 
                     gradient, 
-                    terrainWidth, 
-                    terrainHeight * 2, 
-                    terrainWidth, 
-                    terrainHeight,
+                    width, 
+                    height * 2, 
+                    width, 
+                    height,
                     keepNeighborHeights
                 );
             }
 
-            Terrain bottomNeighbor = terrain.bottomNeighbor;
-            if(bottomNeighbor != null)
+            Terrain bottom = terrain.bottomNeighbor;
+            if(bottom != null)
             {
                 BlendSingleNeighbor(
-                    bottomNeighbor, 
+                    bottom, 
                     verticalMirror, 
                     gradient, 
-                    terrainWidth, 
+                    width, 
                     0, 
-                    terrainWidth, 
-                    terrainHeight,
+                    width, 
+                    height,
                     keepNeighborHeights
                 );
             }
             
-            if(topLeftNeighbor != null)
+            if(topLeft != null)
             {
                 BlendSingleNeighbor(
-                    topLeftNeighbor, 
+                    topLeft, 
                     bothMirror, 
                     gradient, 
                     0, 
-                    terrainHeight * 2, 
-                    terrainWidth, 
-                    terrainHeight,
+                    height * 2, 
+                    width, 
+                    height,
                     keepNeighborHeights
                 );
 
                 ClampToNeighbors(
-                    topLeftNeighbor,
+                    topLeft,
                     null,
-                    topNeighbor,
+                    top,
                     null,
-                    leftNeighbor,
-                    terrainWidth,
-                    terrainHeight
+                    left,
+                    width,
+                    height
                 );
             }
 
-            if(bottomLeftNeighbor != null)
+            if(bottomLeft != null)
             {
                 BlendSingleNeighbor(
-                    bottomLeftNeighbor, 
+                    bottomLeft, 
                     bothMirror, 
                     gradient, 
                     0, 
                     0, 
-                    terrainWidth, 
-                    terrainHeight,
+                    width, 
+                    height,
                     keepNeighborHeights
                 );
 
                 ClampToNeighbors(
-                    bottomLeftNeighbor,
+                    bottomLeft,
                     null,
-                    bottomNeighbor,
-                    leftNeighbor,
+                    bottom,
+                    left,
                     null,
-                    terrainWidth,
-                    terrainHeight
+                    width,
+                    height
                 );
             }
 
-            if(topRightNeighbor != null)
+            if(topRight != null)
             {
                 BlendSingleNeighbor(
-                    topRightNeighbor, 
+                    topRight, 
                     bothMirror, 
                     gradient, 
-                    terrainWidth * 2, 
-                    terrainHeight * 2, 
-                    terrainWidth, 
-                    terrainHeight,
+                    width * 2, 
+                    height * 2, 
+                    width, 
+                    height,
                     keepNeighborHeights
                 );
 
                 ClampToNeighbors(
-                    topRightNeighbor,
-                    topNeighbor,
+                    topRight,
+                    top,
                     null,
                     null,
-                    rightNeighbor,
-                    terrainWidth,
-                    terrainHeight
+                    right,
+                    width,
+                    height
                 );
             }
 
-            if(bottomRightNeighbor != null)
+            if(bottomRight != null)
             {
                 BlendSingleNeighbor(
-                    bottomRightNeighbor, 
+                    bottomRight, 
                     bothMirror, 
                     gradient, 
-                    terrainWidth * 2, 
+                    width * 2, 
                     0, 
-                    terrainWidth, 
-                    terrainHeight,
+                    width, 
+                    height,
                     keepNeighborHeights
                 );
 
                 ClampToNeighbors(
-                    bottomRightNeighbor,
-                    bottomNeighbor,
+                    bottomRight,
+                    bottom,
                     null,
-                    rightNeighbor,
+                    right,
                     null,
-                    terrainWidth,
-                    terrainHeight
+                    width,
+                    height
                 );
             }
         }

@@ -24,7 +24,7 @@ namespace NeuralTerrainGeneration
         )
         {
             Tensor baseHeightmap = GenerateBaseHeightmap(
-                modelOutputWidth, modelOutputHeight,samplingSteps, seed, diffuser
+                modelOutputWidth, modelOutputHeight, samplingSteps, seed, diffuser
             );
 
             Tensor upSampled = barraUpSampler.Execute(baseHeightmap);
