@@ -1,6 +1,7 @@
 ## 1.4.1
 - Sped up generation by caching certain computations
 - Partially fixed brush staircasing
+- Refactored large portion of code
 
 ## 1.4.0
 - Added category headers to UI
