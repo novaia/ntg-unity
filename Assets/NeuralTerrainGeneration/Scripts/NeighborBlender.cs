@@ -30,21 +30,21 @@ namespace NeuralTerrainGeneration
                     localGradient[0, x, y, 0] = gradient[0, yOffset + y, xOffset + x, 0];
                 }
             }
-            Tensor scaledMirror = tensorMathHelper.MultiplyTensors(localGradient, mirror);
+            Tensor scaledMirror = tensorMathHelper.Mul(localGradient, mirror);
 
             if(keepNeighborHeights)
             {
                 float[,] neighborHeightmapArray = 
                     neighbor.terrainData.GetHeights(0, 0, terrainWidth, terrainHeight);
                 Tensor neighborHeightmap = 
-                    tensorMathHelper.TwoDimensionalArrayToTensor(neighborHeightmapArray);
+                    tensorMathHelper.TwoDimArrToTensor(neighborHeightmapArray);
                 Tensor OnesTensor = 
-                    tensorMathHelper.PopulatedTensor(1.0f, terrainWidth, terrainHeight);
+                    tensorMathHelper.Populated(1.0f, terrainWidth, terrainHeight);
                 Tensor inverseLocalGradient = 
-                    tensorMathHelper.SubtractTensor(OnesTensor, localGradient);
+                    tensorMathHelper.Sub(OnesTensor, localGradient);
                 Tensor scaledNeighbor = 
-                    tensorMathHelper.MultiplyTensors(inverseLocalGradient, neighborHeightmap);
-                Tensor blended = tensorMathHelper.AddTensor(scaledMirror, scaledNeighbor);
+                    tensorMathHelper.Mul(inverseLocalGradient, neighborHeightmap);
+                Tensor blended = tensorMathHelper.Add(scaledMirror, scaledNeighbor);
 
                 terrainHelper.SetTerrainHeights(
                     neighbor, 
@@ -112,7 +112,7 @@ namespace NeuralTerrainGeneration
                 }
             }
 
-            Tensor heightmapTensor = tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
+            Tensor heightmapTensor = tensorMathHelper.TwoDimArrToTensor(heightmap);
             terrainHelper.SetTerrainHeights(
                 terrain, 
                 heightmapTensor.ToReadOnlyArray(), 
@@ -174,13 +174,13 @@ namespace NeuralTerrainGeneration
             float[,] heightmap = 
                 terrain.terrainData.GetHeights(0, 0, width, height);
             Tensor heightmapTensor = 
-                tensorMathHelper.TwoDimensionalArrayToTensor(heightmap);
+                tensorMathHelper.TwoDimArrToTensor(heightmap);
             Tensor horizontalMirror = 
-                tensorMathHelper.MirrorTensor(heightmapTensor, false, true);
+                tensorMathHelper.Mirror(heightmapTensor, false, true);
             Tensor verticalMirror = 
-                tensorMathHelper.MirrorTensor(heightmapTensor, true, false);
+                tensorMathHelper.Mirror(heightmapTensor, true, false);
             Tensor bothMirror = 
-                tensorMathHelper.MirrorTensor(heightmapTensor, true, true);
+                tensorMathHelper.Mirror(heightmapTensor, true, true);
 
             Tensor gradient = new Tensor(1, width * 3, height * 3, 1);
             Vector2 center = new Vector2(radius1 + radius2, radius1 + radius2);
