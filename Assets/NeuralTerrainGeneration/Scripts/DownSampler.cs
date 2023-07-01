@@ -9,7 +9,9 @@ namespace NeuralTerrainGeneration
     {
         public Tensor DownSample(Tensor original, int factor)
         {
-            Tensor downSampled = new Tensor(1, original.height / factor, original.width / factor, 1);
+            Tensor downSampled = new Tensor(
+                1, original.height / factor, original.width / factor, 1
+            );
             for(int x = 0; x < downSampled.width; x++)
             {
                 for(int y = 0; y < downSampled.height; y++)

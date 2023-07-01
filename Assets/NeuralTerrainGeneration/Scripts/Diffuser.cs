@@ -21,15 +21,11 @@ namespace NeuralTerrainGeneration
             Model runtimeModel
         )
         {
-            InitializeDiffuser(
-                workerType, 
-                runtimeModel
-            );
+            InitializeDiffuser(workerType, runtimeModel);
         }
 
         private void InitializeDiffuser(
-            WorkerFactory.Type workerType, 
-            Model runtimeModel
+            WorkerFactory.Type workerType, Model runtimeModel
         )
         {
             this.WorkerType = workerType;
@@ -38,13 +34,11 @@ namespace NeuralTerrainGeneration
         }
 
         public void UpdateDiffuser(
-            WorkerFactory.Type workerType,
-            Model runtimeModel
+            WorkerFactory.Type workerType, Model runtimeModel
         )
         {
             bool requiresUpdate = 
-                workerType != this.WorkerType || 
-                runtimeModel != this.RuntimeModel;
+                workerType != this.WorkerType || runtimeModel != this.RuntimeModel;
 
             if(requiresUpdate)
             {
@@ -107,10 +101,7 @@ namespace NeuralTerrainGeneration
 
             Tensor nextNoisyImages = initialNoise;
             Tensor predictedImages = new Tensor(
-                batchSize, 
-                modelOutputWidth, 
-                modelOutputHeight, 
-                channels
+                batchSize, modelOutputWidth, modelOutputHeight, channels
             );
 
             for(int step = startingStep; step < diffusionSteps; step++)
@@ -119,9 +110,7 @@ namespace NeuralTerrainGeneration
 
                 float[] diffusionTimes = {1.0f - stepSize * step};
                 Tensor[] rates = DiffusionSchedule(
-                    diffusionTimes, 
-                    minSignalRate, 
-                    maxSignalRate
+                    diffusionTimes, minSignalRate, maxSignalRate
                 );
                 Tensor noiseRates = rates[0];
                 Tensor signalRates = rates[1];
@@ -157,29 +146,24 @@ namespace NeuralTerrainGeneration
                 }
 
                 Tensor[] nextRates = DiffusionSchedule(
-                    nextDiffusionTimes, 
-                    minSignalRate, 
-                    maxSignalRate
+                    nextDiffusionTimes, minSignalRate, maxSignalRate
                 );
                 Tensor nextNoiseRates = nextRates[0];
                 Tensor nextSignalRates = nextRates[1];
 
                 // predictedImages * nextSignalRate
                 Tensor scaledPredictedImages = tensorMathHelper.ScaleTensorBatches(
-                    predictedImages, 
-                    nextSignalRates
+                    predictedImages, nextSignalRates
                 );
 
                 // predictedNoises * nextNoiseRate
                 Tensor scaledPredictedNoises2 = tensorMathHelper.ScaleTensorBatches(
-                    predictedNoises, 
-                    nextNoiseRates
+                    predictedNoises, nextNoiseRates
                 );
 
                 // predictedImages * nextSignalRate + predictedNoises * nextNoiseRate
                 nextNoisyImages = tensorMathHelper.AddTensor(
-                    scaledPredictedImages, 
-                    scaledPredictedNoises2
+                    scaledPredictedImages, scaledPredictedNoises2
                 );
                 
                 scaledPredictedImages.Dispose();
@@ -208,11 +192,7 @@ namespace NeuralTerrainGeneration
         )
         {
             Tensor output = ReverseDiffusion(
-                input, 
-                modelOutputWidth, 
-                modelOutputHeight,
-                diffusionSteps,
-                startingStep
+                input, modelOutputWidth, modelOutputHeight, diffusionSteps, startingStep
             );
 
             // TODO: I might have forgotten to denormalize values after reverse diffusion.

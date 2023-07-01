@@ -34,13 +34,7 @@ namespace NeuralTerrainGeneration
         )
         {
             InitializeSmoother(
-                kernelSize, 
-                sigma,
-                stride,
-                pad, 
-                inputWidth, 
-                inputHeight,
-                workerType  
+                kernelSize, sigma, stride, pad, inputWidth, inputHeight, workerType  
             );
         }
 
@@ -114,13 +108,7 @@ namespace NeuralTerrainGeneration
             {
                 Dispose();
                 InitializeSmoother(
-                    kernelSize, 
-                    sigma,
-                    stride,
-                    pad, 
-                    inputWidth, 
-                    inputHeight,
-                    workerType
+                    kernelSize, sigma, stride, pad, inputWidth, inputHeight, workerType
                 );
             }
         }

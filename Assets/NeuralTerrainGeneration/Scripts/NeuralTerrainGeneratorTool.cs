@@ -497,7 +497,6 @@ namespace NeuralTerrainGeneration
         {
             if(brushMask == null)
             {
-                Debug.Log("Loading brush mask.");
                 brushMask = (Texture2D)AssetDatabase.LoadAssetAtPath(
                     fullBrushPath, 
                     typeof(Texture2D)

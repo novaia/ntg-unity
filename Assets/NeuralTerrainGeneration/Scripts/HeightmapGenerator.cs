@@ -13,22 +13,18 @@ namespace NeuralTerrainGeneration
         private const int channels = 1;
 
         public float[] GenerateHeightmapFromScratch(
-            int modelOutputWidth,
-            int modelOutputHeight,
-            int samplingSteps,
-            int seed,
-            bool smooth,
-            BarraUpSampler barraUpSampler,
-            GaussianSmoother gaussianSmoother,
+            int modelOutputWidth, 
+            int modelOutputHeight, 
+            int samplingSteps, 
+            int seed, 
+            bool smooth, 
+            BarraUpSampler barraUpSampler, 
+            GaussianSmoother gaussianSmoother, 
             Diffuser diffuser
         )
         {
             Tensor baseHeightmap = GenerateBaseHeightmap(
-                modelOutputWidth,
-                modelOutputHeight,
-                samplingSteps,
-                seed,
-                diffuser
+                modelOutputWidth, modelOutputHeight,samplingSteps, seed, diffuser
             );
 
             Tensor upSampled = barraUpSampler.Execute(baseHeightmap);
@@ -64,19 +60,12 @@ namespace NeuralTerrainGeneration
         )
         {
             Tensor baseHeightmap = GenerateBaseHeightmap(
-                modelOutputWidth,
-                modelOutputHeight,
-                samplingSteps,
-                seed,
-                diffuser
+                modelOutputWidth, modelOutputHeight, samplingSteps, seed, diffuser
             );
 
             Tensor brushMaskTensor = new Tensor(brushMask, 1);
             Tensor maskedHeightmap = new Tensor(
-                batchSize, 
-                modelOutputWidth, 
-                modelOutputHeight, 
-                channels
+                batchSize, modelOutputWidth, modelOutputHeight, channels
             );
 
             // Mask the base heightmap with given brush mask.
@@ -101,8 +90,7 @@ namespace NeuralTerrainGeneration
 
             // Convert the final heightmap to a texture.
             Texture2D finalHeightmapTexture = new Texture2D(
-                finalHeightmap.width,
-                finalHeightmap.height
+                finalHeightmap.width, finalHeightmap.height
             );
 
             Color[] finalHeightmapColors = new Color[finalHeightmap.length];
@@ -112,19 +100,11 @@ namespace NeuralTerrainGeneration
                 // from becoming too compressed and losing information
                 // which leads to staircasing.
                 float colorValue = finalHeightmap[i] * 4.0f - heightOffset;
-                finalHeightmapColors[i] = new Color(
-                    colorValue,
-                    colorValue,
-                    colorValue
-                );
+                finalHeightmapColors[i] = new Color(colorValue, colorValue, colorValue);
             }
 
             finalHeightmapTexture.SetPixels(
-                0,
-                0,
-                finalHeightmap.width,
-                finalHeightmap.height,
-                finalHeightmapColors
+                0, 0, finalHeightmap.width, finalHeightmap.height, finalHeightmapColors
             );
             finalHeightmapTexture.Apply();
 
@@ -145,18 +125,11 @@ namespace NeuralTerrainGeneration
         )
         {
             Tensor input = tensorMathHelper.PseudoRandomNormalTensor(
-                batchSize,
-                modelOutputWidth,
-                modelOutputHeight,
-                channels,
-                seed
+                batchSize, modelOutputWidth, modelOutputHeight, channels, seed
             );
 
             Tensor baseHeightmap = diffuser.Execute(
-                input,
-                modelOutputWidth,
-                modelOutputHeight,
-                samplingSteps
+                input, modelOutputWidth, modelOutputHeight, samplingSteps
             );
 
             input.Dispose();

@@ -18,7 +18,9 @@ namespace NeuralTerrainGeneration
             }
             magnitude = Mathf.Sqrt(magnitude);
 
-            Tensor normalizedTensor = new Tensor(tensor.batch, tensor.height, tensor.width, tensor.channels);
+            Tensor normalizedTensor = new Tensor(
+                tensor.batch, tensor.height, tensor.width, tensor.channels
+            );
             for(int i = 0; i < tensor.length; i++)
             {
                 normalizedTensor[i] = tensor[i] / magnitude;
@@ -93,31 +95,35 @@ namespace NeuralTerrainGeneration
             for(int i = 0; i < width * height; i++)
             {
                 // Box-Muller transform.
-                // Reference: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+                // https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
                 double mean = 0.0f;
                 double stdDev = 1.0f;
                 double u1 = 1.0 - random.NextDouble();
                 double u2 = 1.0 - random.NextDouble();
-                double randomStdNormal = Math.Sqrt(-2.0f * Math.Log(u1)) * Math.Sin(2.0f * Math.PI * u2);
+                double randomStdNormal = 
+                    Math.Sqrt(-2.0f * Math.Log(u1)) * Math.Sin(2.0f * Math.PI * u2);
                 double randomNormal = mean + stdDev * randomStdNormal;
                 tensor[i] = (float)randomNormal;
             }
             return tensor;
         }
 
-        public Tensor PseudoRandomNormalTensor(int batchSize, int width, int height, int channels, int seed)
+        public Tensor PseudoRandomNormalTensor(
+            int batchSize, int width, int height, int channels, int seed
+        )
         {
             Tensor tensor = new Tensor(batchSize, width, height, channels);
             System.Random random = new System.Random(seed);
             for(int i = 0; i < width * height; i++)
             {
                 // Box-Muller transform.
-                // Reference: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+                // https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
                 double mean = 0.0f;
                 double stdDev = 1.0f;
                 double u1 = 1.0 - random.NextDouble();
                 double u2 = 1.0 - random.NextDouble();
-                double randomStdNormal = Math.Sqrt(-2.0f * Math.Log(u1)) * Math.Sin(2.0f * Math.PI * u2);
+                double randomStdNormal = 
+                    Math.Sqrt(-2.0f * Math.Log(u1)) * Math.Sin(2.0f * Math.PI * u2);
                 double randomNormal = mean + stdDev * randomStdNormal;
                 tensor[i] = (float)randomNormal;
             }
@@ -132,7 +138,9 @@ namespace NeuralTerrainGeneration
                 return null;
             }
 
-            Tensor newTensor = new Tensor(tensor1.batch, tensor1.height, tensor1.width, tensor1.channels);
+            Tensor newTensor = new Tensor(
+                tensor1.batch, tensor1.height, tensor1.width, tensor1.channels
+            );
             for(int i = 0; i < tensor1.length; i++)
             {
                 newTensor[i] = Mathf.Lerp(tensor1[i], tensor2[i], lerpValue);
@@ -148,7 +156,9 @@ namespace NeuralTerrainGeneration
                 return null;
             }
 
-            Tensor newTensor = new Tensor(tensor1.batch, tensor1.height, tensor1.width, tensor1.channels);
+            Tensor newTensor = new Tensor(
+                tensor1.batch, tensor1.height, tensor1.width, tensor1.channels
+            );
             for(int i = 0; i < tensor1.length; i++)
             {
                 newTensor[i] = tensor1[i] + tensor2[i];
@@ -156,7 +166,9 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor ScaleTensorBatches(Tensor tensor, Tensor scalars, bool inverseScalars = false)
+        public Tensor ScaleTensorBatches(
+            Tensor tensor, Tensor scalars, bool inverseScalars = false
+        )
         {
             if(tensor.batch != scalars.length)
             {
@@ -164,7 +176,9 @@ namespace NeuralTerrainGeneration
                 return null;
             }
 
-            Tensor newTensor = new Tensor(tensor.batch, tensor.width, tensor.height, tensor.channels);
+            Tensor newTensor = new Tensor(
+                tensor.batch, tensor.width, tensor.height, tensor.channels
+            );
             for(int batch = 0; batch < tensor.batch; batch++)
             {
                 float scalar = scalars[batch];
@@ -185,7 +199,9 @@ namespace NeuralTerrainGeneration
 
         public Tensor ScaleTensor(Tensor tensor, float scalar)
         {
-            Tensor newTensor = new Tensor(tensor.batch, tensor.width, tensor.height, tensor.channels);
+            Tensor newTensor = new Tensor(
+                tensor.batch, tensor.width, tensor.height, tensor.channels
+            );
             for(int i = 0; i < tensor.length; i++)
             {
                 newTensor[i] = tensor[i] * scalar;
@@ -201,14 +217,17 @@ namespace NeuralTerrainGeneration
                 return null;
             }
 
-            Tensor newTensor = new Tensor(leftTensor.batch, leftTensor.width, leftTensor.height, leftTensor.channels);
+            Tensor newTensor = new Tensor(
+                leftTensor.batch, leftTensor.width, leftTensor.height, leftTensor.channels
+            );
             for(int batch = 0; batch < leftTensor.batch; batch++)
             {
                 for(int x = 0; x < leftTensor.width; x++)
                 {
                     for(int y = 0; y < leftTensor.height; y++)
                     {
-                        newTensor[batch, y, x, 0] = leftTensor[batch, y, x, 0] - rightTensor[batch, y, x, 0];
+                        newTensor[batch, y, x, 0] = 
+                            leftTensor[batch, y, x, 0] - rightTensor[batch, y, x, 0];
                     }
                 }
             }
@@ -217,7 +236,9 @@ namespace NeuralTerrainGeneration
 
         public Tensor RaiseTensorToPower(Tensor tensor, int power)
         {
-            Tensor newTensor = new Tensor(tensor.batch, tensor.width, tensor.height, tensor.channels);
+            Tensor newTensor = new Tensor(
+                tensor.batch, tensor.width, tensor.height, tensor.channels
+            );
             for(int i = 0; i < tensor.length; i++)
             {
                 newTensor[i] = Mathf.Pow(tensor[i], power);
@@ -225,12 +246,14 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor GradientTensor(float leftValue, 
-                                    float rightValue, 
-                                    float topValue, 
-                                    float bottomValue, 
-                                    int width, 
-                                    int height)
+        public Tensor GradientTensor(
+            float leftValue, 
+            float rightValue, 
+            float topValue, 
+            float bottomValue, 
+            int width, 
+            int height
+        )
         {
             Tensor newTensor = new Tensor(1, width, height, 1);
             float lrGradient = (rightValue - leftValue) / (width - 1);
@@ -247,18 +270,18 @@ namespace NeuralTerrainGeneration
             return newTensor;
         }
 
-        public Tensor MultiplyTensors(Tensor leftTensor, Tensor rightTensor)
+        public Tensor MultiplyTensors(Tensor left, Tensor right)
         {
-            if(leftTensor.length != rightTensor.length)
+            if(left.length != right.length)
             {
                 Debug.LogError("Tensors must be the same size.");
                 return null;
             }
 
-            Tensor newTensor = new Tensor(leftTensor.batch, leftTensor.width, leftTensor.height, leftTensor.channels);
-            for(int i = 0; i < leftTensor.length; i++)
+            Tensor newTensor = new Tensor(left.batch, left.width, left.height, left.channels);
+            for(int i = 0; i < left.length; i++)
             {
-                newTensor[i] = leftTensor[i] * rightTensor[i];
+                newTensor[i] = left[i] * right[i];
             }
             return newTensor;
         }
@@ -280,7 +303,9 @@ namespace NeuralTerrainGeneration
 
         public Tensor MirrorTensor(Tensor tensor, bool mirrorX, bool mirrorY)
         {
-            Tensor newTensor = new Tensor(tensor.batch, tensor.width, tensor.height, tensor.channels);
+            Tensor newTensor = new Tensor(
+                tensor.batch, tensor.width, tensor.height, tensor.channels
+            );
 
             int xSign = 1;
             int ySign = 1;
@@ -304,41 +329,50 @@ namespace NeuralTerrainGeneration
                 {
                     for(int y = 0; y < tensor.height; y++)
                     {
-                        newTensor[batch, y, x, 0] = tensor[batch, yStart + ySign * y, xStart + xSign * x, 0];
+                        newTensor[batch, y, x, 0] = 
+                            tensor[batch, yStart + ySign * y, xStart + xSign * x, 0];
                     }
                 }
             }
             return newTensor;
         }
 
-        public Tensor ConcatenateTenors(Tensor leftTensor, Tensor rightTensor)
+        public Tensor ConcatenateTenors(Tensor left, Tensor right)
         {
-            if(leftTensor.batch != rightTensor.batch || leftTensor.height != rightTensor.height || leftTensor.channels != rightTensor.channels)
+            bool shapesMatch = 
+                left.batch == right.batch && 
+                left.height == right.height && 
+                left.channels == right.channels;
+
+            if(!shapesMatch)
             {
                 Debug.LogError("Tensors must have the same batch, height and channels.");
                 return null;
             }
 
-            Tensor newTensor = new Tensor(leftTensor.batch, leftTensor.width + rightTensor.width, leftTensor.height, leftTensor.channels);
-            for(int batch = 0; batch < leftTensor.batch; batch++)
+            Tensor newTensor = new Tensor(
+                left.batch, left.width + right.width, left.height, left.channels
+            );
+            for(int batch = 0; batch < left.batch; batch++)
             {
-                for(int x = 0; x < leftTensor.width; x++)
+                for(int x = 0; x < left.width; x++)
                 {
-                    for(int y = 0; y < leftTensor.height; y++)
+                    for(int y = 0; y < leftleftTensor.height; y++)
                     {
-                        for(int channel = 0; channel < leftTensor.channels; channel++)
+                        for(int channel = 0; channel < left.channels; channel++)
                         {
-                            newTensor[batch, y, x, channel] = leftTensor[batch, y, x, channel];
+                            newTensor[batch, y, x, channel] = left[batch, y, x, channel];
                         }
                     }
                 }
-                for(int x = 0; x < rightTensor.width; x++)
+                for(int x = 0; x < right.width; x++)
                 {
-                    for(int y = 0; y < rightTensor.height; y++)
+                    for(int y = 0; y < right.height; y++)
                     {
-                        for(int channel = 0; channel < rightTensor.channels; channel++)
+                        for(int channel = 0; channel < right.channels; channel++)
                         {
-                            newTensor[batch, y, x + leftTensor.width, channel] = rightTensor[batch, y, x, channel];
+                            newTensor[batch, y, x + left.width, channel] 
+                                = right[batch, y, x, channel];
                         }
                     }
                 }
@@ -354,7 +388,9 @@ namespace NeuralTerrainGeneration
                 return null;
             }
 
-            Tensor newTensor = new Tensor(tensor.batch, tensor.width / 2, tensor.height, tensor.channels);
+            Tensor newTensor = new Tensor(
+                tensor.batch, tensor.width / 2, tensor.height, tensor.channels
+            );
             for(int batch = 0; batch < tensor.batch; batch++)
             {
                 for(int x = 0; x < newTensor.width; x++)
