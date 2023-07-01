@@ -27,13 +27,7 @@ namespace NeuralTerrainGeneration
             WorkerFactory.Type workerType
         )
         {
-            InitializeUpSampler(
-                inputWidth, 
-                inputHeight, 
-                factor, 
-                bilinear, 
-                workerType 
-            );
+            InitializeUpSampler(inputWidth, inputHeight, factor, bilinear, workerType);
         }
 
         private void InitializeUpSampler(
@@ -88,13 +82,7 @@ namespace NeuralTerrainGeneration
             if(requiresUpdate)
             {
                 Dispose();
-                InitializeUpSampler(
-                    inputWidth, 
-                    inputHeight, 
-                    factor, 
-                    bilinear, 
-                    workerType 
-                );
+                InitializeUpSampler(inputWidth, inputHeight, factor, bilinear, workerType);
             }
         }
 
