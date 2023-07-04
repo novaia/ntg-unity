@@ -1,0 +1,23 @@
+{
+    "name": "NeuralTerrainGeneration",
+    "version": "1.4.1",
+    "displayName": "Neural Terrain Generation",
+    "description": "Leverage AI to create lifelike terrain in seconds.",
+    "unity": "2019.1",
+    "unityRelease": "0b5",
+    "changelogUrl": "https://github.com/hayden-donnelly/ntg-unity/blob/main/CHANGELOG.md",
+    "licensesUrl": "https://github.com/hayden-donnelly/ntg-unity/blob/main/LICENSE",
+    "dependencies": {
+        "com.unity.ml-agents": "2.0.1",
+        "com.unity.terrain-tools": "4.0.5"
+    },
+    "keywords": [
+        "terrain",
+        "ai",
+        "machine-learning"
+    ],
+    "author": {
+        "name": "Hayden Donnelly",
+        "email": "donnellyhd@outlook.com"
+    }
+}
