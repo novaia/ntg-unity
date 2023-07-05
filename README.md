@@ -16,6 +16,11 @@ The training code for NTG models can be found at [hayden-donnelly/ntg](https://g
 7. From the terrain component, select the "Paint Terrain" tab
 8. Open the terrain tools dropdown and select "Neural Terrain Generation"
 
+## Installing from git url
+Doesn't work yet, but will soon.
+```
+https://github.com/hayden-donnelly/ntg-unity.git?path=/Assets/NeuralTerrainGeneration
+```
 
 ## Screenshots
 ![terrain_screenshot](./Images/readme_image.png)
