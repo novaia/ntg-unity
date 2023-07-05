@@ -1,0 +1,12 @@
+{
+    "scopedRegistries": [{
+        "name": "Neural Terrain Generation",
+        "url": "https://github.com/hayden-donnelly/ntg-unity.git",
+        "scopes": [
+            "com.hayden-donnelly.neural-terrain-generation"
+        ]
+    }],
+    "dependencies": {
+        "com.hayden-donnelly.neural-terrain-generation": "file:Assets/NeuralTerrainGeneration"
+    }
+}
