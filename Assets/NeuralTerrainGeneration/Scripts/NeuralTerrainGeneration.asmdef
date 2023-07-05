@@ -1,0 +1,18 @@
+{
+    "name": "NeuralTerrainGeneration",
+    "rootNamespace": "NeuralTerrainGeneration",
+    "references": [
+        "Unity.Barracuda",
+        "UnityEditor.TerrainTools",
+		"UnityEngine.TerrainTools"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
