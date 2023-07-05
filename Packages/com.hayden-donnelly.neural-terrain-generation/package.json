@@ -1,5 +1,5 @@
 {
-    "name": "NeuralTerrainGeneration",
+    "name": "com.hayden-donnelly.neural-terrain-generation",
     "version": "1.4.1",
     "displayName": "Neural Terrain Generation",
     "description": "Leverage AI to create lifelike terrain in seconds.",

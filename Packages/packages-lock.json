@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.hayden-donnelly.neural-terrain-generation": {
+      "version": "file:com.hayden-donnelly.neural-terrain-generation",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.ml-agents": "2.0.1",
+        "com.unity.terrain-tools": "4.0.5"
+      }
+    },
     "com.unity.asset-store-tools": {
       "version": "file:com.unity.asset-store-tools",
       "depth": 0,
