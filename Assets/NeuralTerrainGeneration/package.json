@@ -19,5 +19,10 @@
     "author": {
         "name": "Hayden Donnelly",
         "email": "donnellyhd@outlook.com"
-    }
+    },
+    "samples": [{
+        "displayName": "RequiredAssets",
+        "description": "Brush masks and NN Models required for Neural Terrain Genration.",
+        "path": "RequiredAssets"
+    }]
 }
