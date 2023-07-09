@@ -24,7 +24,7 @@ namespace NeuralTerrainGeneration
         private int modelOutputHeight = 256;
         private float heightMultiplier = 0.5f;
         private const string modelFolder1 = "Assets/NeuralTerrainGeneration/NNModels/";
-        private const string modelFolder2 = "Packages/NeuralTerrainGeneration/NNModels/";
+        private const string modelFolder2 = @"Packages/Neural Terrain Generation/NNModels/";
         private const string modelName = "pix_diffuser_epoch62.onnx";
         private const string modelPath1 = modelFolder1 + modelName;
         private const string modelPath2 = modelFolder2 + modelName;
@@ -79,7 +79,7 @@ namespace NeuralTerrainGeneration
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
         private const string brushFolder1 = "Assets/NeuralTerrainGeneration/BrushMasks/";
-        private const string brushFolder2 = "Packages/NeuralTerrainGeneration/BrushMasks/";
+        private const string brushFolder2 = @"Packages/Neural Terrain Generation/BrushMasks/";
         private const string defaultBrushName = "square_brush_01.png";
         private const string brushPath1 = brushFolder1 + defaultBrushName;
         private const string brushPath2 = brushFolder2 + defaultBrushName;
