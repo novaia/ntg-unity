@@ -79,7 +79,7 @@ namespace NeuralTerrainGeneration
         private Texture2D brushHeightmap;
         private Texture2D brushHeightmapMasked;
         private const string brushFolder1 = "Assets/NeuralTerrainGeneration/BrushMasks/";
-        private const string brushFolder2 = @"Packages/Neural Terrain Generation/BrushMasks/";
+        private const string brushFolder2 =  "Library/PackageCache/com.hayden-donnelly.neural-terrain-generation/BrushMasks/";
         private const string defaultBrushName = "square_brush_01.png";
         private const string brushPath1 = brushFolder1 + defaultBrushName;
         private const string brushPath2 = brushFolder2 + defaultBrushName;
