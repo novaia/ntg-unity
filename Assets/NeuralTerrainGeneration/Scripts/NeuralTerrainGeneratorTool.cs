@@ -24,7 +24,7 @@ namespace NeuralTerrainGeneration
         private int modelOutputHeight = 256;
         private float heightMultiplier = 0.5f;
         private const string modelFolder1 = "Assets/NeuralTerrainGeneration/NNModels/";
-        private const string modelFolder2 = @"Packages/Neural Terrain Generation/NNModels/";
+        private const string modelFolder2 = "Library/PackageCache/com.hayden-donnelly.neural-terrain-generation/NNModels/";
         private const string modelName = "pix_diffuser_epoch62.onnx";
         private const string modelPath1 = modelFolder1 + modelName;
         private const string modelPath2 = modelFolder2 + modelName;
