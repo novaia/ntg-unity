@@ -319,8 +319,9 @@ namespace NeuralTerrainGeneration
         )
         {
             // Get the built-in painting Material reference.
-            Material mat = TerrainPaintUtility.GetBuiltinPaintMaterial();
-            
+            //Material mat = TerrainPaintUtility.GetBuiltinPaintMaterial();
+            Material mat = new Material(Shader.Find("TerrainTool/CustomTerrainTool"));
+
             // Bind the current brush texture.
             mat.SetTexture("_BrushTex", brushTexture);
 
