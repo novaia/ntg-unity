@@ -1,7 +1,7 @@
 # ntg-unity
 NTG Unity is a package for running Neural Terrain Generation models inside of Unity.
 
-The training code for NTG models can be found at [hayden-donnelly/ntg](https://github.com/hayden-donnelly/ntg).
+The training code for NTG models can be found at [hayden-donnelly/ntg](https://github.com/novaia-computing/ntg).
 
 [NTG Unity Trailer](https://youtu.be/MZakPuXyquk)
 
@@ -12,7 +12,7 @@ The training code for NTG models can be found at [hayden-donnelly/ntg](https://g
 4. Click "Generate Terrain" to generate a new terrain
 
 ## Installing from Unity Asset Store
-You can download and install NTG Unity from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/terrain/neural-terrain-generation-249580)
+You can download and install NTG Unity from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/terrain/neural-terrain-generation-249580).
 
 ## Installing Locally
 1. Clone this repository
