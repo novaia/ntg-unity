@@ -1,7 +1,7 @@
 # ntg-unity
 NTG Unity is a package for running Neural Terrain Generation models inside of Unity.
 
-The training code for NTG models can be found at [hayden-donnelly/ntg](https://github.com/novaia-computing/ntg).
+The training code for NTG models can be found at [novaia-computing/ntg](https://github.com/novaia-computing/ntg).
 
 [NTG Unity Trailer](https://youtu.be/MZakPuXyquk)
 
