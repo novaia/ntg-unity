@@ -3,8 +3,6 @@ NTG Unity is a package for running Neural Terrain Generation models inside of Un
 
 The training code for NTG models can be found at [novaia-computing/ntg](https://github.com/novaia-computing/ntg).
 
-[NTG Unity Trailer](https://youtu.be/MZakPuXyquk)
-
 ## Getting Started
 1. Create a 3D terrain object
 2. From the terrain component, select the "Paint Terrain" tab
